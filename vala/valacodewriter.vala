@@ -1518,6 +1518,19 @@ public class Vala.CodeWriter : CodeVisitor {
 		}
 	}
 
+	private bool skip_since_tag_check (Symbol sym, string since_val) {
+		Symbol parent_symbol = sym;
+
+		while (parent_symbol.parent_symbol != null) {
+			parent_symbol = parent_symbol.parent_symbol;
+			if (parent_symbol.version.since == since_val) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	private void write_attributes (CodeNode node) {
 		var sym = node as Symbol;
 
@@ -1550,6 +1563,13 @@ public class Vala.CodeWriter : CodeVisitor {
 			if (attr.name == "CCode" && keys.get_length () == 0) {
 				// only cheader_filename on namespace
 				continue;
+			}
+
+			if (sym != null && attr.args.size == 1 && attr.name == "Version") {
+				string since_val = attr.get_string ("since");
+				if (since_val != null && skip_since_tag_check (sym, since_val)) {
+					continue;
+				}
 			}
 
 			if (!(node is Parameter) && !(node is PropertyAccessor)) {

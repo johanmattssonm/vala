@@ -156,6 +156,7 @@ libvalacore_la_VALASOURCES = \
 	valausingdirective.vala \
 	valavaluetype.vala \
 	valavariable.vala \
+	valaversionattribute.vala \
 	valavoidtype.vala \
 	valawhilestatement.vala \
 	valayieldstatement.vala \

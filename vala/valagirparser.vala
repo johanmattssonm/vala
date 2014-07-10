@@ -52,6 +52,7 @@ public class Vala.GirParser : CodeVisitor {
 		DEPRECATED,
 		REPLACEMENT,
 		DEPRECATED_SINCE,
+		SINCE,
 		ARRAY,
 		ARRAY_LENGTH_IDX,
 		ARRAY_NULL_TERMINATED,
@@ -1120,7 +1121,14 @@ public class Vala.GirParser : CodeVisitor {
 
 				// experimental
 				if (metadata.has_argument (ArgumentType.EXPERIMENTAL)) {
-					symbol.set_attribute ("Experimental", metadata.get_bool (ArgumentType.EXPERIMENTAL));
+					symbol.set_attribute_bool ("Version", "experimental", metadata.get_bool (ArgumentType.EXPERIMENTAL));
+				}
+
+				// since
+				if (metadata.has_argument (ArgumentType.SINCE)) {
+					symbol.version.since = metadata.get_string (ArgumentType.SINCE);
+				} else if (symbol is Namespace == false && girdata["version"] != null) {
+					symbol.version.since = girdata.get ("version");
 				}
 
 				if (parent.symbol is Namespace) {
@@ -1160,13 +1168,13 @@ public class Vala.GirParser : CodeVisitor {
 						}
 					}
 					if (node.deprecated) {
-						node.symbol.set_attribute ("Deprecated", true);
+						node.symbol.version.deprecated = true;
 					}
 					if (node.deprecated_since != null) {
-						node.symbol.set_attribute_string ("Deprecated", "since", node.deprecated_since);
+						node.symbol.version.deprecated_since = node.deprecated_since;
 					}
 					if (node.deprecated_replacement != null) {
-						node.symbol.set_attribute_string ("Deprecated", "replacement", node.deprecated_replacement);
+						node.symbol.version.replacement = node.deprecated_replacement;
 					}
 
 					if (node.new_symbol && !node.merged && !metadata.get_bool (ArgumentType.HIDDEN)) {
@@ -1811,6 +1819,7 @@ public class Vala.GirParser : CodeVisitor {
 				parse_include ();
 			} else if (reader.name == "package") {
 				var pkg = parse_package ();
+				this.current_source_file.package_name = pkg;
 				if (context.has_package (pkg)) {
 					// package already provided elsewhere, stop parsing this GIR
 					return;
