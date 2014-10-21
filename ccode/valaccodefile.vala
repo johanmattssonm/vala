@@ -33,6 +33,7 @@ public class Vala.CCodeFile {
 	CCodeFragment type_member_declaration = new CCodeFragment ();
 	CCodeFragment constant_declaration = new CCodeFragment ();
 	CCodeFragment type_member_definition = new CCodeFragment ();
+	Set<string> declared_functions = new HashSet<string> (str_hash, str_equal);
 
 	public bool add_declaration (string name) {
 		if (name in declarations) {
@@ -77,7 +78,10 @@ public class Vala.CCodeFile {
 		var decl = func.copy ();
 		decl.is_declaration = true;
 
-		type_member_declaration.append (decl);
+		if (!(func.name in declared_functions)) {
+			type_member_declaration.append (decl);
+			declared_functions.add (func.name);
+		}
 	}
 
 	public void add_function (CCodeFunction func) {

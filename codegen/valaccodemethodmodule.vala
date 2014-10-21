@@ -1125,36 +1125,39 @@ public abstract class Vala.CCodeMethodModule : CCodeStructModule {
 	}
 
 	private void create_precondition_statement (CodeNode method_node, DataType ret_type, Expression precondition) {
-		if (CodeContext.get ().has_glib ()) {
-			var ccheck = new CCodeFunctionCall ();
+		var ccheck = new CCodeFunctionCall ();
 
-			precondition.emit (this);
-
-			ccheck.add_argument (get_cvalue (precondition));
-
-			if (method_node is CreationMethod) {
-				ccheck.call = new CCodeIdentifier ("g_return_val_if_fail");
-				ccheck.add_argument (new CCodeConstant ("NULL"));
-			} else if (method_node is Method && ((Method) method_node).coroutine) {
-				// _co function
-				ccheck.call = new CCodeIdentifier ("g_return_val_if_fail");
-				ccheck.add_argument (new CCodeConstant (SemanticAnalyzer.get_false ()));
-			} else if (ret_type is VoidType) {
-				/* void function */
-				ccheck.call = new CCodeIdentifier ("g_return_if_fail");
-			} else {
-				ccheck.call = new CCodeIdentifier ("g_return_val_if_fail");
-
-				var cdefault = default_value_for_type (ret_type, false);
-				if (cdefault != null) {
-					ccheck.add_argument (cdefault);
-				} else {
-					return;
-				}
-			}
-			
-			ccode.add_expression (ccheck);
+		precondition.emit (this);
+		
+		if (!CodeContext.get ().has_glib () && get_cvalue (precondition) != null) {
+			Report.error (method_node.source_reference, "The require statement can only be used with GLib");
+			return;
 		}
+
+		ccheck.add_argument (get_cvalue (precondition));
+
+		if (method_node is CreationMethod) {
+			ccheck.call = new CCodeIdentifier ("g_return_val_if_fail");
+			ccheck.add_argument (new CCodeConstant ("NULL"));
+		} else if (method_node is Method && ((Method) method_node).coroutine) {
+			// _co function
+			ccheck.call = new CCodeIdentifier ("g_return_val_if_fail");
+			ccheck.add_argument (new CCodeConstant (SemanticAnalyzer.get_false ()));
+		} else if (ret_type is VoidType) {
+			/* void function */
+			ccheck.call = new CCodeIdentifier ("g_return_if_fail");
+		} else {
+			ccheck.call = new CCodeIdentifier ("g_return_val_if_fail");
+
+			var cdefault = default_value_for_type (ret_type, false);
+			if (cdefault != null) {
+				ccheck.add_argument (cdefault);
+			} else {
+				return;
+			}
+		}
+		
+		ccode.add_expression (ccheck);
 	}
 
 	private TypeSymbol? find_parent_type (Symbol sym) {

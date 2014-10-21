@@ -253,6 +253,16 @@ public class Vala.Method : Subroutine {
 	}
 
 	public override void accept (CodeVisitor visitor) {
+		if (!CodeContext.get ().has_glib ()) {
+			if (preconditions != null && preconditions.size > 0) {
+				Report.error (source_reference, "require statement needs GLib");
+			}
+
+			if (postconditions != null && postconditions.size > 0) {
+				Report.error (source_reference, "ensure statement requires GLib");
+			}
+		}
+		
 		visitor.visit_method (this);
 	}
 
