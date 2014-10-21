@@ -345,6 +345,11 @@ public class Vala.CodeContext {
 			return true;
 		}
 
+		if (pkg == "posix" && !nostdpkg) {
+			Report.error (null, "Both Posix and GLib packages included. Use --nostdpkg if you want to use libc instead of glib.");	
+			return false;
+		}
+
 		// first try .vapi
 		var path = get_vapi_path (pkg);
 		if (path == null) {

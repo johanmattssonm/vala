@@ -1,4 +1,4 @@
-/* posix.vapi – a vapi for libc types and functions
+/* posix.vapi – a vapi file for libc
  * Copyright (C) 2008-2009  Jürg Billeter
  * Copyright (C) 2010 Marco Trevisan (Treviño)
  * Copyright (C) 2013 Nikolay Orliuk

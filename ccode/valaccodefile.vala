@@ -76,6 +76,7 @@ public class Vala.CCodeFile {
 	public void add_function_declaration (CCodeFunction func) {
 		var decl = func.copy ();
 		decl.is_declaration = true;
+
 		type_member_declaration.append (decl);
 	}
 
