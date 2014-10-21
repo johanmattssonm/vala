@@ -151,6 +151,7 @@ public class Vala.SemanticAnalyzer : CodeVisitor {
 	public DataType double_type;
 	public DataType type_type;
 	public DataType va_list_type;
+	
 	public Class object_type;
 	public StructValueType gvalue_type;
 	public ObjectType gvariant_type;
@@ -205,30 +206,31 @@ public class Vala.SemanticAnalyzer : CodeVisitor {
 		}
 
 		var glib_ns = root_symbol.scope.lookup ("GLib");
+		if (glib_ns != null) {
+			object_type = (Class) glib_ns.scope.lookup ("Object");
+			type_type = new IntegerType ((Struct) glib_ns.scope.lookup ("Type"));
+			gvalue_type = new StructValueType ((Struct) glib_ns.scope.lookup ("Value"));
+			gvariant_type = new ObjectType ((Class) glib_ns.scope.lookup ("Variant"));
 
-		object_type = (Class) glib_ns.scope.lookup ("Object");
-		type_type = new IntegerType ((Struct) glib_ns.scope.lookup ("Type"));
-		gvalue_type = new StructValueType ((Struct) glib_ns.scope.lookup ("Value"));
-		gvariant_type = new ObjectType ((Class) glib_ns.scope.lookup ("Variant"));
+			glist_type = new ObjectType ((Class) glib_ns.scope.lookup ("List"));
+			gslist_type = new ObjectType ((Class) glib_ns.scope.lookup ("SList"));
+			garray_type = new ObjectType ((Class) glib_ns.scope.lookup ("Array"));
+			gvaluearray_type = new ObjectType ((Class) glib_ns.scope.lookup ("ValueArray"));
 
-		glist_type = new ObjectType ((Class) glib_ns.scope.lookup ("List"));
-		gslist_type = new ObjectType ((Class) glib_ns.scope.lookup ("SList"));
-		garray_type = new ObjectType ((Class) glib_ns.scope.lookup ("Array"));
-		gvaluearray_type = new ObjectType ((Class) glib_ns.scope.lookup ("ValueArray"));
+			gerror_type = (Class) glib_ns.scope.lookup ("Error");
+			regex_type = new ObjectType ((Class) root_symbol.scope.lookup ("GLib").scope.lookup ("Regex"));
 
-		gerror_type = (Class) glib_ns.scope.lookup ("Error");
-		regex_type = new ObjectType ((Class) root_symbol.scope.lookup ("GLib").scope.lookup ("Regex"));
+			gsource_type = (Class) glib_ns.scope.lookup ("Source");
 
-		gsource_type = (Class) glib_ns.scope.lookup ("Source");
-
-		current_symbol = root_symbol;
-		context.root.check (context);
+			current_symbol = root_symbol;
+			context.root.check (context);
+		}
+		
 		context.accept (this);
 	}
-
+	
 	public override void visit_source_file (SourceFile file) {
 		current_source_file = file;
-
 		file.check (context);
 	}
 
@@ -1033,5 +1035,21 @@ public class Vala.SemanticAnalyzer : CodeVisitor {
 			sym = sym.parent_symbol;
 		}
 		return false;
+	}
+	
+	/** 
+	 * @return the c code representation of "true".
+	 */
+	public static string get_true () {
+		BooleanType bt = (BooleanType) CodeContext.get ().analyzer.bool_type;
+		return bt.get_true_value ();
+	}
+	
+	/** 
+	 * @return the c code representation of "false".
+	 */
+	public static string get_false () {
+		BooleanType bt = (BooleanType) CodeContext.get ().analyzer.bool_type;
+		return bt.get_false_value ();
 	}
 }

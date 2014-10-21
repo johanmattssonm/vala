@@ -547,7 +547,7 @@ public class Vala.Class : ObjectTypeSymbol {
 		if (this == t) {
 			return true;
 		}
-
+		
 		foreach (DataType base_type in base_types) {
 			if (base_type.data_type != null && base_type.data_type.is_subtype_of (t)) {
 				return true;
@@ -577,7 +577,6 @@ public class Vala.Class : ObjectTypeSymbol {
 			list.add (type);
 			if (type is Interface) {
 				get_all_prerequisites ((Interface) type, list);
-
 			}
 		}
 	}

@@ -667,7 +667,7 @@ public class Vala.Parser : CodeVisitor {
 				break;
 			}
 		}
-
+		
 		return expr;
 	}
 
@@ -819,9 +819,11 @@ public class Vala.Parser : CodeVisitor {
 	}
 
 	Expression parse_this_access () throws ParseError {
+		MemberAccess member;
 		var begin = get_location ();
 		expect (TokenType.THIS);
-		return new MemberAccess (null, "this", get_src (begin));
+		member = new MemberAccess (null, "this", get_src (begin));
+		return member;
 	}
 
 	Expression parse_base_access () throws ParseError {
@@ -1167,6 +1169,7 @@ public class Vala.Parser : CodeVisitor {
 				break;
 			}
 		}
+		
 		return left;
 	}
 
@@ -1188,6 +1191,7 @@ public class Vala.Parser : CodeVisitor {
 				break;
 			}
 		}
+
 		return left;
 	}
 
@@ -1195,6 +1199,7 @@ public class Vala.Parser : CodeVisitor {
 		var begin = get_location ();
 		var left = parse_additive_expression ();
 		bool found = true;
+
 		while (found) {
 			switch (current ()) {
 			case TokenType.OP_SHIFT_LEFT:
@@ -1221,13 +1226,14 @@ public class Vala.Parser : CodeVisitor {
 				break;
 			}
 		}
+		
 		return left;
 	}
 
 	Expression parse_relational_expression () throws ParseError {
 		var begin = get_location ();
 		var left = parse_shift_expression ();
-
+		
 		bool first = true;
 		bool found = true;
 		while (found) {
@@ -1239,6 +1245,7 @@ public class Vala.Parser : CodeVisitor {
 				next ();
 				var right = parse_shift_expression ();
 				left = new BinaryExpression (operator, left, right, get_src (begin));
+				
 				if (!first) {
 					var be = (BinaryExpression) left;
 					be.chained = true;

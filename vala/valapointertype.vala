@@ -83,11 +83,13 @@ public class Vala.PointerType : DataType {
 			return base_type.compatible (target_type);
 		}
 
-		if (target_type.data_type != null && target_type.data_type.is_subtype_of (CodeContext.get ().analyzer.gvalue_type.data_type)) {
-			// allow implicit conversion to GValue
-			return true;
+		if (CodeContext.get ().has_glib ()) {
+			if (target_type.data_type != null && target_type.data_type.is_subtype_of (CodeContext.get ().analyzer.gvalue_type.data_type)) {
+				// allow implicit conversion to GValue
+				return true;
+			}
 		}
-
+		
 		return false;
 	}
 

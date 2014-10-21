@@ -244,6 +244,7 @@ class Vala.Compiler {
 		if (ccode_only && save_temps) {
 			Report.warning (null, "--save-temps has no effect when -C or --ccode is set");
 		}
+		
 		if (profile == "gobject-2.0" || profile == "gobject" || profile == null) {
 			// default profile
 			context.profile = Profile.GOBJECT;

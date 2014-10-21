@@ -30,7 +30,7 @@ public class Vala.GObjectModule : GTypeModule {
 	public override void visit_class (Class cl) {
 		base.visit_class (cl);
 
-		if (!cl.is_subtype_of (gobject_type)) {
+		if (CodeContext.get ().has_glib () && !cl.is_subtype_of (gobject_type)) {
 			return;
 		}
 
@@ -694,6 +694,7 @@ public class Vala.GObjectModule : GTypeModule {
 
 	public override bool is_gobject_property (Property prop) {
 		var type_sym = prop.parent_symbol as ObjectTypeSymbol;
+		
 		if (type_sym == null || !type_sym.is_subtype_of (gobject_type)) {
 			return false;
 		}

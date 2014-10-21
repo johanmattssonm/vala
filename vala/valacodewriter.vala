@@ -204,6 +204,7 @@ public class Vala.CodeWriter : CodeVisitor {
 		string cheaders = "";
 		if (type != CodeWriterType.FAST && !sym.external_package) {
 			cheaders = sym.get_attribute_string ("CCode", "cheader_filename") ?? "";
+					
 			if (cheaders == "" && sym.parent_symbol != null && sym.parent_symbol != context.root) {
 				cheaders = get_cheaders (sym.parent_symbol);
 			}

@@ -163,6 +163,11 @@ public class Vala.CastExpression : Expression {
 	}
 
 	bool is_gvariant (CodeContext context, DataType type) {
+		// gvariants are not supported in posix profile
+		if (context.analyzer.gvariant_type == null) { 
+			return false;
+		}
+			
 		return type.data_type != null && type.data_type.is_subtype_of (context.analyzer.gvariant_type.data_type);
 	}
 

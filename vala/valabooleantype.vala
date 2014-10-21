@@ -30,6 +30,32 @@ public class Vala.BooleanType : ValueType {
 		base (type_symbol);
 	}
 
+	public string get_true_value () {
+		var attr = data_type.get_attribute ("BooleanType");
+		string value = "TRUE";
+		
+		if (attr == null) {
+			warning ("no attribute");
+		} else {
+			value = attr.get_string ("true", "TRUE");
+		}
+		
+		return value;
+	}
+	
+	public string get_false_value () {
+		var attr = data_type.get_attribute ("BooleanType");
+		string value = "FALSE";
+		
+		if (attr == null) {
+			warning ("no attribute");
+		} else {
+			value = attr.get_string ("false", "FALSE");
+		}
+		
+		return value;
+	}
+
 	public override DataType copy () {
 		var result = new BooleanType ((Struct) type_symbol);
 		result.source_reference = source_reference;

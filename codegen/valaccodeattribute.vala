@@ -654,14 +654,14 @@ public class Vala.CCodeAttribute : AttributeCache {
 		} else if (node is GenericType) {
 			var type = (GenericType) node;
 			if (type.value_owned) {
-				return "gpointer";
+				return CodeContext.get ().has_glib () ? "gpointer" : "void*";
 			} else {
-				return "gconstpointer";
+				return CodeContext.get ().has_glib () ? "gconstpointer" : "const void*";
 			}
 		} else if (node is MethodType) {
-			return "gpointer";
+			return CodeContext.get ().has_glib () ? "gpointer" : "void*";
 		} else if (node is NullType) {
-			return "gpointer";
+			return CodeContext.get ().has_glib () ? "gpointer" : "void*";
 		} else if (node is PointerType) {
 			var type = (PointerType) node;
 			if (type.base_type.data_type != null && type.base_type.data_type.is_reference_type ()) {

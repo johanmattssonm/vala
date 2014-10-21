@@ -1690,12 +1690,20 @@ public class Vala.GTypeModule : GErrorModule {
 
 			cfile.add_function_declaration (instance_finalize_context.ccode);
 		} else if (cl.base_class == null) {
-			var ccall = new CCodeFunctionCall (new CCodeIdentifier ("g_slice_free"));
-			ccall.add_argument (new CCodeIdentifier (get_ccode_name (cl)));
-			ccall.add_argument (new CCodeIdentifier ("self"));
-			push_context (instance_finalize_context);
-			ccode.add_expression (ccall);
-			pop_context ();
+			if (CodeContext.get ().has_glib ()) {
+				var ccall = new CCodeFunctionCall (new CCodeIdentifier ("g_slice_free"));
+				ccall.add_argument (new CCodeIdentifier (get_ccode_name (cl)));
+				ccall.add_argument (new CCodeIdentifier ("self"));
+				push_context (instance_finalize_context);
+				ccode.add_expression (ccall);
+				pop_context ();
+			} else {
+				var ccall = new CCodeFunctionCall (new CCodeIdentifier ("free"));
+				ccall.add_argument (new CCodeIdentifier ("self"));
+				push_context (instance_finalize_context);
+				ccode.add_expression (ccall);
+				pop_context ();
+			}
 		}
 
 		cfile.add_function (instance_finalize_context.ccode);
@@ -1809,7 +1817,7 @@ public class Vala.GTypeModule : GErrorModule {
 				if (prop.initializer != null) {
 					cspec.add_argument ((CCodeExpression) get_ccodenode (prop.initializer));
 				} else {
-					cspec.add_argument (new CCodeConstant ("FALSE"));
+					cspec.add_argument (new CCodeConstant (SemanticAnalyzer.get_false ()));
 				}
 			} else if (type_id == "G_TYPE_CHAR") {
 				cspec.call = new CCodeIdentifier ("g_param_spec_char");
@@ -2073,10 +2081,10 @@ public class Vala.GTypeModule : GErrorModule {
 		push_function (base_init);
 
 		/* make sure not to run the initialization code twice */
-		ccode.add_declaration (get_ccode_name (bool_type), new CCodeVariableDeclarator ("initialized", new CCodeConstant ("FALSE")), CCodeModifiers.STATIC);
+		ccode.add_declaration (get_ccode_name (bool_type), new CCodeVariableDeclarator ("initialized", new CCodeConstant (SemanticAnalyzer.get_false ())), CCodeModifiers.STATIC);
 		ccode.open_if (new CCodeUnaryExpression (CCodeUnaryOperator.LOGICAL_NEGATION, new CCodeIdentifier ("initialized")));
 
-		ccode.add_assignment (new CCodeIdentifier ("initialized"), new CCodeConstant ("TRUE"));
+		ccode.add_assignment (new CCodeIdentifier ("initialized"), new CCodeConstant (SemanticAnalyzer.get_true()));
 
 		if (iface.is_subtype_of (gobject_type)) {
 			/* create properties */
@@ -2214,7 +2222,7 @@ public class Vala.GTypeModule : GErrorModule {
 	public override void create_type_check_statement (CodeNode method_node, DataType ret_type, TypeSymbol t, bool non_null, string var_name) {
 		var ccheck = new CCodeFunctionCall ();
 
-		if (!context.assert) {
+		if (!context.assert || !context.has_glib ()) {
 			return;
 		} else if (context.checking && ((t is Class && !((Class) t).is_compact) || t is Interface)) {
 			var ctype_check = new CCodeFunctionCall (new CCodeIdentifier (get_ccode_type_check_function (t)));

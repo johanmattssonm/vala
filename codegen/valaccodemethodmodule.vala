@@ -147,7 +147,7 @@ public abstract class Vala.CCodeMethodModule : CCodeStructModule {
 		unref.add_argument (async_result_expr);
 		ccode.add_expression (unref);
 
-		ccode.add_return (new CCodeConstant ("FALSE"));
+		ccode.add_return (new CCodeConstant (SemanticAnalyzer.get_false ()));
 	}
 
 	public override void generate_method_declaration (Method m, CCodeFile decl_space) {
@@ -640,8 +640,16 @@ public abstract class Vala.CCodeMethodModule : CCodeStructModule {
 
 						if (!((CreationMethod) m).chain_up) {
 							// TODO implicitly chain up to base class as in add_object_creation
-							var ccall = new CCodeFunctionCall (new CCodeIdentifier ("g_slice_new0"));
-							ccall.add_argument (new CCodeIdentifier (get_ccode_name (cl)));
+							CCodeFunctionCall ccall;
+							
+							if (CodeContext.get ().has_glib ()) {
+								ccall = new CCodeFunctionCall (new CCodeIdentifier ("g_slice_new0"));
+								ccall.add_argument (new CCodeIdentifier (get_ccode_name (cl)));
+							} else {
+								ccall = new CCodeFunctionCall (new CCodeIdentifier ("malloc"));
+								ccall.add_argument (new CCodeIdentifier ("sizeof (" + get_ccode_name (cl) + ")"));
+							}
+							
 							ccode.add_assignment (get_this_cexpression (), ccall);
 						}
 
@@ -845,10 +853,12 @@ public abstract class Vala.CCodeMethodModule : CCodeStructModule {
 				cond.append (new CCodeExpressionStatement (thread_init_call));
 			}
 
-			var cond = new CCodeIfSection ("!GLIB_CHECK_VERSION (2,35,0)");
-			ccode.add_statement (cond);
-			cond.append (new CCodeExpressionStatement (new CCodeFunctionCall (new CCodeIdentifier ("g_type_init"))));
-
+			if (CodeContext.get ().has_glib ()) {
+				var cond = new CCodeIfSection ("!GLIB_CHECK_VERSION (2,35,0)");
+				ccode.add_statement (cond);
+				cond.append (new CCodeExpressionStatement (new CCodeFunctionCall (new CCodeIdentifier ("g_type_init"))));
+			}
+			
 			var main_call = new CCodeFunctionCall (new CCodeIdentifier (function.name));
 			if (m.get_parameters ().size == 1) {
 				main_call.add_argument (new CCodeIdentifier ("argv"));
@@ -1115,34 +1125,36 @@ public abstract class Vala.CCodeMethodModule : CCodeStructModule {
 	}
 
 	private void create_precondition_statement (CodeNode method_node, DataType ret_type, Expression precondition) {
-		var ccheck = new CCodeFunctionCall ();
+		if (CodeContext.get ().has_glib ()) {
+			var ccheck = new CCodeFunctionCall ();
 
-		precondition.emit (this);
+			precondition.emit (this);
 
-		ccheck.add_argument (get_cvalue (precondition));
+			ccheck.add_argument (get_cvalue (precondition));
 
-		if (method_node is CreationMethod) {
-			ccheck.call = new CCodeIdentifier ("g_return_val_if_fail");
-			ccheck.add_argument (new CCodeConstant ("NULL"));
-		} else if (method_node is Method && ((Method) method_node).coroutine) {
-			// _co function
-			ccheck.call = new CCodeIdentifier ("g_return_val_if_fail");
-			ccheck.add_argument (new CCodeConstant ("FALSE"));
-		} else if (ret_type is VoidType) {
-			/* void function */
-			ccheck.call = new CCodeIdentifier ("g_return_if_fail");
-		} else {
-			ccheck.call = new CCodeIdentifier ("g_return_val_if_fail");
-
-			var cdefault = default_value_for_type (ret_type, false);
-			if (cdefault != null) {
-				ccheck.add_argument (cdefault);
+			if (method_node is CreationMethod) {
+				ccheck.call = new CCodeIdentifier ("g_return_val_if_fail");
+				ccheck.add_argument (new CCodeConstant ("NULL"));
+			} else if (method_node is Method && ((Method) method_node).coroutine) {
+				// _co function
+				ccheck.call = new CCodeIdentifier ("g_return_val_if_fail");
+				ccheck.add_argument (new CCodeConstant (SemanticAnalyzer.get_false ()));
+			} else if (ret_type is VoidType) {
+				/* void function */
+				ccheck.call = new CCodeIdentifier ("g_return_if_fail");
 			} else {
-				return;
+				ccheck.call = new CCodeIdentifier ("g_return_val_if_fail");
+
+				var cdefault = default_value_for_type (ret_type, false);
+				if (cdefault != null) {
+					ccheck.add_argument (cdefault);
+				} else {
+					return;
+				}
 			}
+			
+			ccode.add_expression (ccheck);
 		}
-		
-		ccode.add_expression (ccheck);
 	}
 
 	private TypeSymbol? find_parent_type (Symbol sym) {
