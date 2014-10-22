@@ -406,7 +406,70 @@ public class string {
 	public unowned string to_string () {
 		return this;
 	}
+	
+	public string concat (string string2, ...) {
+		char* buffer;
+		char* start_position;
+		int buffer_size;
+		string? s;
+		va_list input = va_list ();
+		va_list input_count = input.copy (input);
+		int this_length, string2_length;
+
+		// determine the size of the new string
+		this_length = this.length;
+		string2_length = string2.length;
+		buffer_size = this_length + string2_length;
+		s = input_count.arg<string?> ();
+		while (s != null) {
+			buffer_size += ((!) s).length;
+			s = input_count.arg<string?> ();
+		}
+		buffer_size += 1;
+		buffer = new char[buffer_size];
+		
+		// copy the strings
+		Posix.strcpy ((string) buffer, this);
+		start_position = (char*) this + this_length;
+		
+		Posix.strcpy ((string) start_position, string2);
+		start_position += string2_length;
+		
+		s = input.arg<string?> ();	
+		while (s != null) {
+			Posix.strcpy ((string) start_position, (!) s);
+			start_position += ((!) s).length;
+			s = input.arg<string?> ();
+		}
+		
+		buffer[buffer_size - 1] = '\0';
+		return (string) buffer;
+	}
+	
+	public bool has_prefix (string prefix) {
+		return Posix.strncmp (this, prefix, prefix.length) == 0;
+	}
+	
+	public bool has_suffix (string suffix) {
+		int this_length;
+		int suffix_length;
+		char* buffer;
+
+		buffer = (char*) this;
+		this_length = this.length;
+		suffix_length = suffix.length;
+
+		if (this_length < suffix_length) {
+			return false;
+		}
+		
+		return Posix.strcmp ((string) (buffer + this_length - suffix_length), suffix) == 0;
+	}	
 }
+
+[CCode (cheader_filename = "stdio.h", cname = "printf")]
+[PrintfFormat]
+public static void print (string format, ...);
 
 [CCode (cprefix = "", lower_case_cprefix = "")]
 namespace Posix {
@@ -1401,7 +1464,7 @@ namespace Posix {
 	[CCode (cheader_filename = "stdio.h")]
 	[PrintfFormat]
 	public void printf (string format,...);
-
+	
 	[CCode (cheader_filename = "stdlib.h")]
 	public void abort ();
 	[CCode (cheader_filename = "stdlib.h")]
