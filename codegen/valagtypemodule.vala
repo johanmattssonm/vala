@@ -1817,7 +1817,7 @@ public class Vala.GTypeModule : GErrorModule {
 				if (prop.initializer != null) {
 					cspec.add_argument ((CCodeExpression) get_ccodenode (prop.initializer));
 				} else {
-					cspec.add_argument (false_literal);
+					cspec.add_argument (CCodeConstants.false);
 				}
 			} else if (type_id == "G_TYPE_CHAR") {
 				cspec.call = new CCodeIdentifier ("g_param_spec_char");
@@ -2081,10 +2081,10 @@ public class Vala.GTypeModule : GErrorModule {
 		push_function (base_init);
 
 		/* make sure not to run the initialization code twice */
-		ccode.add_declaration (get_ccode_name (bool_type), new CCodeVariableDeclarator ("initialized", false_literal), CCodeModifiers.STATIC);
+		ccode.add_declaration (get_ccode_name (bool_type), new CCodeVariableDeclarator ("initialized", CCodeConstants.false), CCodeModifiers.STATIC);
 		ccode.open_if (new CCodeUnaryExpression (CCodeUnaryOperator.LOGICAL_NEGATION, new CCodeIdentifier ("initialized")));
 
-		ccode.add_assignment (new CCodeIdentifier ("initialized"), true_literal);
+		ccode.add_assignment (new CCodeIdentifier ("initialized"), CCodeConstants.true);
 
 		if (iface.is_subtype_of (gobject_type)) {
 			/* create properties */

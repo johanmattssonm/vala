@@ -17,6 +17,7 @@ lib_LTLIBRARIES = \
 	$(NULL)
 
 libvala_la_VALASOURCES = \
+	valaccodeconstants.vala \
 	valaccodearraymodule.vala \
 	valaccodeassignmentmodule.vala \
 	valaccodeattribute.vala \

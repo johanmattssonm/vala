@@ -333,9 +333,6 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 	public bool requires_array_length;
 	public bool requires_clear_mutex;
 
-	public CCodeConstant true_literal;
-	public CCodeConstant false_literal;
-
 	public Set<string> wrappers;
 	Set<Symbol> generated_external_symbols;
 
@@ -444,9 +441,6 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 		if (unichar_struct != null) {
 			unichar_type = new IntegerType (unichar_struct);
 		}
-
-		true_literal = new CCodeConstant (bool_type.true);
-		false_literal = new CCodeConstant (bool_type.false);
 		
 		var glib_ns = root_symbol.scope.lookup ("GLib");
 		
@@ -2764,19 +2758,19 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 		{
 			var cexp = new CCodeBinaryExpression (CCodeBinaryOperator.EQUALITY, new CCodeIdentifier ("s1"), new CCodeIdentifier ("s2"));
 			ccode.open_if (cexp);
-			ccode.add_return (true_literal);
+			ccode.add_return (CCodeConstants.true);
 			ccode.close ();
 		}
 		// if (s1 == NULL || s2 == NULL) return FALSE;
 		{
 			var cexp = new CCodeBinaryExpression (CCodeBinaryOperator.EQUALITY, new CCodeIdentifier ("s1"), new CCodeConstant ("NULL"));
 			ccode.open_if (cexp);
-			ccode.add_return (false_literal);
+			ccode.add_return (CCodeConstants.false);
 			ccode.close ();
 
 			cexp = new CCodeBinaryExpression (CCodeBinaryOperator.EQUALITY, new CCodeIdentifier ("s2"), new CCodeConstant ("NULL"));
 			ccode.open_if (cexp);
-			ccode.add_return (false_literal);
+			ccode.add_return (CCodeConstants.false);
 			ccode.close ();
 		}
 
@@ -2812,7 +2806,7 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 			}
 
 			ccode.open_if (cexp);
-			ccode.add_return (false_literal);
+			ccode.add_return (CCodeConstants.false);
 			ccode.close ();
 		}
 
@@ -2822,10 +2816,10 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 				var cexp = new CCodeBinaryExpression (CCodeBinaryOperator.EQUALITY, new CCodeUnaryExpression (CCodeUnaryOperator.POINTER_INDIRECTION, new CCodeIdentifier ("s1")), new CCodeUnaryExpression (CCodeUnaryOperator.POINTER_INDIRECTION, new CCodeIdentifier ("s2")));
 				ccode.add_return (cexp);
 			} else {
-				ccode.add_return (false_literal);
+				ccode.add_return (CCodeConstants.false);
 			}
 		} else {
-			ccode.add_return (true_literal);
+			ccode.add_return (CCodeConstants.true);
 		}
 
 		pop_function ();
@@ -2856,7 +2850,7 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 		{
 			var cexp = new CCodeBinaryExpression (CCodeBinaryOperator.EQUALITY, new CCodeIdentifier ("s1"), new CCodeIdentifier ("s2"));
 			ccode.open_if (cexp);
-			ccode.add_return (true_literal);
+			ccode.add_return (CCodeConstants.true);
 			ccode.close ();
 		}
 		// if (s1 == NULL || s2 == NULL) return FALSE;
@@ -3381,10 +3375,10 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 				|| type.data_type.is_subtype_of (garray_type)
 				|| type.data_type.is_subtype_of (gbytearray_type)
 				|| type.data_type.is_subtype_of (gptrarray_type)))) {
-			ccall.add_argument (true_literal);
+			ccall.add_argument (CCodeConstants.true);
 		} else if (type.data_type == gthreadpool_type) {
 			ccall.add_argument (new CCodeConstant ("FALSE"));
-			ccall.add_argument (true_literal);
+			ccall.add_argument (CCodeConstants.true);
 		} else if (type is ArrayType) {
 			var array_type = (ArrayType) type;
 			if (requires_destroy (array_type.element_type)) {
@@ -3849,7 +3843,7 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 	}
 
 	public override void visit_boolean_literal (BooleanLiteral expr) {
-		CCodeConstant value = expr.value ? true_literal : false_literal;
+		CCodeConstant value = expr.value ? CCodeConstants.true : CCodeConstants.false;
 		set_cvalue (expr, value);
 	}
 
@@ -5318,7 +5312,7 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 				ccall.add_argument (cleft);
 				ccall.add_argument (cright);
 				cleft = ccall;
-				cright = true_literal;
+				cright = CCodeConstants.true;
 			} else if ((left_type is IntegerType || left_type is FloatingType || left_type is BooleanType || left_type is EnumValueType) && left_type.nullable &&
 			           (right_type is IntegerType || right_type is FloatingType || right_type is BooleanType || right_type is EnumValueType) && right_type.nullable) {
 				var equalfunc = generate_numeric_equal_function ((TypeSymbol) left_type.data_type);
@@ -5326,7 +5320,7 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 				ccall.add_argument (cleft);
 				ccall.add_argument (cright);
 				cleft = ccall;
-				cright = true_literal;
+				cright = CCodeConstants.true;
 			}
 		}
 
@@ -5453,7 +5447,7 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 			var ccall = new CCodeFunctionCall (new CCodeIdentifier (equalfunc));
 			ccall.add_argument (new CCodeUnaryExpression (CCodeUnaryOperator.ADDRESS_OF, celement));
 			ccall.add_argument (cneedle);
-			cif_condition = new CCodeBinaryExpression (CCodeBinaryOperator.EQUALITY, ccall, true_literal);
+			cif_condition = new CCodeBinaryExpression (CCodeBinaryOperator.EQUALITY, ccall, CCodeConstants.true);
 		} else {
 			cif_condition = new CCodeBinaryExpression (CCodeBinaryOperator.EQUALITY, cneedle, celement);
 		}
