@@ -26,34 +26,22 @@ using GLib;
  * A boolean type.
  */
 public class Vala.BooleanType : ValueType {
+	
+	public string @true { get; set; }
+	public string @false { get; set; }
+	
 	public BooleanType (Struct type_symbol) {
 		base (type_symbol);
-	}
-
-	public string get_true_value () {
 		var attr = data_type.get_attribute ("BooleanType");
-		string value = "TRUE";
+		this.true = "TRUE";
+		this.false = "FALSE";
 		
 		if (attr == null) {
-			warning ("no attribute");
+			Report.error (source_reference, "Boolean type not found.");
 		} else {
-			value = attr.get_string ("true", "TRUE");
-		}
-		
-		return value;
-	}
-	
-	public string get_false_value () {
-		var attr = data_type.get_attribute ("BooleanType");
-		string value = "FALSE";
-		
-		if (attr == null) {
-			warning ("no attribute");
-		} else {
-			value = attr.get_string ("false", "FALSE");
-		}
-		
-		return value;
+			this.true = attr.get_string ("true", "TRUE");
+			this.false = attr.get_string ("false", "FALSE");
+		}	
 	}
 
 	public override DataType copy () {

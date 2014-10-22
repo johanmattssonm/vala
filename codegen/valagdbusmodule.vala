@@ -194,12 +194,12 @@ public class Vala.GDBusModule : GVariantModule {
 			if (type.data_type.get_full_name () == "GLib.UnixInputStream") {
 				var result = new CCodeFunctionCall (new CCodeIdentifier ("g_unix_input_stream_new"));
 				result.add_argument (expr);
-				result.add_argument (new CCodeConstant (SemanticAnalyzer.get_true ()));
+				result.add_argument (new CCodeConstant ("TRUE"));
 				return new CCodeCastExpression (result, "GUnixInputStream *");
 			} else if (type.data_type.get_full_name () == "GLib.UnixOutputStream") {
 				var result = new CCodeFunctionCall (new CCodeIdentifier ("g_unix_output_stream_new"));
 				result.add_argument (expr);
-				result.add_argument (new CCodeConstant (SemanticAnalyzer.get_true ()));
+				result.add_argument (new CCodeConstant ("TRUE"));
 				return new CCodeCastExpression (result, "GUnixOutputStream *");
 			} else if (type.data_type.get_full_name () == "GLib.Socket") {
 				var result = new CCodeFunctionCall (new CCodeIdentifier ("g_socket_new_from_fd"));

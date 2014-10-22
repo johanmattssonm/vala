@@ -614,12 +614,12 @@ public class Vala.GSignalModule : GObjectModule {
 			LocalVariable? detail_temp_decl = null;
 			if (!(signal_access is ElementAccess)) {
 				parse_call.add_argument (new CCodeConstant ("NULL"));
-				parse_call.add_argument (new CCodeConstant (SemanticAnalyzer.get_false ()));
+				parse_call.add_argument (new CCodeConstant ("FALSE"));
 			} else {
 				detail_temp_decl = get_temp_variable (gquark_type);
 				emit_temp_var (detail_temp_decl);
 				parse_call.add_argument (new CCodeUnaryExpression (CCodeUnaryOperator.ADDRESS_OF, new CCodeIdentifier (detail_temp_decl.name)));
-				parse_call.add_argument (new CCodeConstant (SemanticAnalyzer.get_true ()));
+				parse_call.add_argument (new CCodeConstant ("TRUE"));
 			}
 			ccode.add_expression (parse_call);
 

@@ -147,7 +147,7 @@ public abstract class Vala.CCodeMethodModule : CCodeStructModule {
 		unref.add_argument (async_result_expr);
 		ccode.add_expression (unref);
 
-		ccode.add_return (new CCodeConstant (SemanticAnalyzer.get_false ()));
+		ccode.add_return (new CCodeConstant ("FALSE"));
 	}
 
 	public override void generate_method_declaration (Method m, CCodeFile decl_space) {
@@ -1142,7 +1142,7 @@ public abstract class Vala.CCodeMethodModule : CCodeStructModule {
 		} else if (method_node is Method && ((Method) method_node).coroutine) {
 			// _co function
 			ccheck.call = new CCodeIdentifier ("g_return_val_if_fail");
-			ccheck.add_argument (new CCodeConstant (SemanticAnalyzer.get_false ()));
+			ccheck.add_argument (new CCodeConstant ("FALSE"));
 		} else if (ret_type is VoidType) {
 			/* void function */
 			ccheck.call = new CCodeIdentifier ("g_return_if_fail");

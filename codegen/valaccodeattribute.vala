@@ -693,20 +693,23 @@ public class Vala.CCodeAttribute : AttributeCache {
 		}
 	}
 
-	private string get_default_header_filenames () {
+	private string get_default_header_filenames () {		
 		if (sym is DynamicProperty || sym is DynamicMethod) {
 			return "";
 		}
+		
 		if (sym.parent_symbol != null) {
 			var parent_headers = CCodeBaseModule.get_ccode_header_filenames (sym.parent_symbol);
 			if (parent_headers.length > 0) {
 				return parent_headers;
 			}
 		}
+		
 		if (sym.source_reference != null && !sym.external_package) {
 			// don't add default include directives for VAPI files
 			return sym.source_reference.file.get_cinclude_filename ();
 		}
+		
 		return "";
 	}
 

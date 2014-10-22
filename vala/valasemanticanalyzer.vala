@@ -1036,20 +1036,4 @@ public class Vala.SemanticAnalyzer : CodeVisitor {
 		}
 		return false;
 	}
-	
-	/** 
-	 * @return the c code representation of "true".
-	 */
-	public static string get_true () {
-		BooleanType bt = (BooleanType) CodeContext.get ().analyzer.bool_type;
-		return bt.get_true_value ();
-	}
-	
-	/** 
-	 * @return the c code representation of "false".
-	 */
-	public static string get_false () {
-		BooleanType bt = (BooleanType) CodeContext.get ().analyzer.bool_type;
-		return bt.get_false_value ();
-	}
 }

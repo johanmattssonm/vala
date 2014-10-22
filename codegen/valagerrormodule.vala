@@ -107,7 +107,7 @@ public class Vala.GErrorModule : CCodeDelegateModule {
 			ccode.add_expression (destroy_value (new GLibValue (new ObjectType (cl), new CCodeIdentifier ("self"), true)));
 			ccode.add_return (new CCodeConstant ("NULL"));
 		} else if (is_in_coroutine ()) {
-			ccode.add_return (new CCodeConstant (SemanticAnalyzer.get_false ()));
+			ccode.add_return (new CCodeConstant ("FALSE"));
 		} else {
 			return_default_value (current_return_type);
 		}
@@ -143,7 +143,7 @@ public class Vala.GErrorModule : CCodeDelegateModule {
 				ccode.add_return (new CCodeConstant ("NULL"));
 			}
 		} else if (is_in_coroutine ()) {
-			ccode.add_return (new CCodeConstant (SemanticAnalyzer.get_false ()));
+			ccode.add_return (new CCodeConstant ("FALSE"));
 		} else if (current_return_type != null) {
 			return_default_value (current_return_type);
 		}

@@ -206,7 +206,7 @@ public abstract class Vala.CCodeControlFlowModule : CCodeMethodModule {
 	}
 
 	public override void visit_loop (Loop stmt) {
-		ccode.open_while (new CCodeConstant (SemanticAnalyzer.get_true ()));
+		ccode.open_while (new CCodeConstant ("TRUE"));
 
 		stmt.body.emit (this);
 

@@ -265,7 +265,7 @@ public class Vala.GtkModule : GSignalModule {
 		var call = new CCodeFunctionCall (new CCodeIdentifier ("gtk_widget_class_bind_template_child_full"));
 		call.add_argument (new CCodeIdentifier ("GTK_WIDGET_CLASS (klass)"));
 		call.add_argument (new CCodeConstant ("\"%s\"".printf (gtk_name)));
-		call.add_argument (new CCodeConstant (internal_child ? SemanticAnalyzer.get_true () : SemanticAnalyzer.get_false ()));
+		call.add_argument (new CCodeConstant (internal_child ? "TRUE" : "FALSE"));
 		call.add_argument (offset);
 		ccode.add_expression (call);
 

@@ -781,12 +781,12 @@ public class Vala.GDBusServerModule : GDBusClientModule {
 			ccall.add_argument (new CCodeIdentifier ("value"));
 
 			ccode.add_expression (ccall);
-			ccode.add_return (new CCodeConstant (SemanticAnalyzer.get_true ()));
+			ccode.add_return (new CCodeConstant ("TRUE"));
 		}
 		if (!firstif) {
 			ccode.close ();
 		}
-		ccode.add_return (new CCodeConstant (SemanticAnalyzer.get_false ()));
+		ccode.add_return (new CCodeConstant ("FALSE"));
 
 		pop_function ();
 		cfile.add_function (cfunc);
