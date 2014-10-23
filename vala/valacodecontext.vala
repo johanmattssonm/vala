@@ -346,7 +346,7 @@ public class Vala.CodeContext {
 		}
 
 		if (pkg == "posix" && !nostdpkg) {
-			Report.error (null, "Both Posix and GLib packages included. Use --nostdpkg if you don't to include glib.");	
+			Report.error (null, "Both Posix and GLib packages included. Use --nostdpkg if you don't want to include glib.");	
 			return false;
 		}
 
