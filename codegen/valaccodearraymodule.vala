@@ -52,49 +52,82 @@ public class Vala.CCodeArrayModule : CCodeMethodCallModule {
 			append_initializer_list (name_cnode, expr.initializer_list, expr.rank, ref i);
 
 			set_cvalue (expr, name_cnode);
+		} else if (CodeContext.get ().has_glib ()) {
+			var gnew = new CCodeFunctionCall (new CCodeIdentifier ("g_new0"));
+			gnew.add_argument (new CCodeIdentifier (get_ccode_name (expr.element_type)));
+		
+			bool first = true;
+			CCodeExpression cexpr = null;
 
-			return;
-		}
+			// iterate over each dimension
+			foreach (Expression size in expr.get_sizes ()) {
+				CCodeExpression csize = get_cvalue (size);
+				append_array_length (expr, csize);
 
-		var gnew = new CCodeFunctionCall (new CCodeIdentifier ("g_new0"));
-		gnew.add_argument (new CCodeIdentifier (get_ccode_name (expr.element_type)));
-
-		bool first = true;
-		CCodeExpression cexpr = null;
-
-		// iterate over each dimension
-		foreach (Expression size in expr.get_sizes ()) {
-			CCodeExpression csize = get_cvalue (size);
-			append_array_length (expr, csize);
-
-			if (first) {
-				cexpr = csize;
-				first = false;
-			} else {
-				cexpr = new CCodeBinaryExpression (CCodeBinaryOperator.MUL, cexpr, csize);
+				if (first) {
+					cexpr = csize;
+					first = false;
+				} else {
+					cexpr = new CCodeBinaryExpression (CCodeBinaryOperator.MUL, cexpr, csize);
+				}
 			}
+			
+			// add extra item to have array NULL-terminated for all reference types
+			if (expr.element_type.data_type != null && expr.element_type.data_type.is_reference_type ()) {
+				cexpr = new CCodeBinaryExpression (CCodeBinaryOperator.PLUS, cexpr, new CCodeConstant ("1"));
+			}
+			
+			gnew.add_argument (cexpr);
+
+			var temp_var = get_temp_variable (expr.value_type, true, expr);
+			var name_cnode = get_variable_cexpression (temp_var.name);
+			int i = 0;
+
+			emit_temp_var (temp_var);
+
+			ccode.add_assignment (name_cnode, gnew);
+
+			if (expr.initializer_list != null) {
+				append_initializer_list (name_cnode, expr.initializer_list, expr.rank, ref i);
+			}
+
+			set_cvalue (expr, name_cnode);
+		} else {
+			int i = 0;
+			var temp_var = get_temp_variable (expr.value_type, true, expr);
+			var name_cnode = get_variable_cexpression (temp_var.name);
+			var allocate = new CCodeFunctionCall (new CCodeIdentifier ("malloc"));
+
+			emit_temp_var (temp_var);
+
+			// all dimensions multplied by the size of this variable
+			CCodeExpression size_expression = new CCodeIdentifier ("sizeof (" + get_ccode_name (expr.element_type) + ") ");
+			foreach (Expression size in expr.get_sizes ()) {
+				CCodeExpression csize = get_cvalue (size);
+				append_array_length (expr, csize);
+				size_expression = new CCodeBinaryExpression (CCodeBinaryOperator.MUL, size_expression, csize);
+			}
+
+			// add extra item to have array NULL-terminated for all reference types
+			if (expr.element_type.data_type != null && expr.element_type.data_type.is_reference_type ()) {
+				size_expression = new CCodeBinaryExpression (CCodeBinaryOperator.PLUS, size_expression, new CCodeConstant ("1"));
+			}
+						
+			allocate.add_argument (size_expression);
+			ccode.add_assignment (name_cnode, allocate);
+
+			var initialze = new CCodeFunctionCall (new CCodeIdentifier ("memset"));
+			initialze.add_argument (name_cnode);
+			initialze.add_argument (new CCodeConstant ("0"));
+			initialze.add_argument (size_expression);
+			ccode.add_expression (initialze);
+
+			if (expr.initializer_list != null) {
+				append_initializer_list (name_cnode, expr.initializer_list, expr.rank, ref i);
+			}
+
+			set_cvalue (expr, name_cnode);
 		}
-		
-		// add extra item to have array NULL-terminated for all reference types
-		if (expr.element_type.data_type != null && expr.element_type.data_type.is_reference_type ()) {
-			cexpr = new CCodeBinaryExpression (CCodeBinaryOperator.PLUS, cexpr, new CCodeConstant ("1"));
-		}
-		
-		gnew.add_argument (cexpr);
-
-		var temp_var = get_temp_variable (expr.value_type, true, expr);
-		var name_cnode = get_variable_cexpression (temp_var.name);
-		int i = 0;
-
-		emit_temp_var (temp_var);
-
-		ccode.add_assignment (name_cnode, gnew);
-
-		if (expr.initializer_list != null) {
-			append_initializer_list (name_cnode, expr.initializer_list, expr.rank, ref i);
-		}
-
-		set_cvalue (expr, name_cnode);
 	}
 
 	public override string get_array_length_cname (string array_cname, int dim) {
@@ -242,7 +275,13 @@ public class Vala.CCodeArrayModule : CCodeMethodCallModule {
 		var cforiter = new CCodeAssignment (new CCodeIdentifier ("i"), new CCodeBinaryExpression (CCodeBinaryOperator.PLUS, new CCodeIdentifier ("i"), new CCodeConstant ("1")));
 		ccode.open_for (cforinit, cforcond, cforiter);
 
-		var cptrarray = new CCodeCastExpression (new CCodeIdentifier ("array"), "gpointer*");
+		CCodeCastExpression cptrarray;
+		if (CodeContext.get ().has_glib ()) {
+			cptrarray = new CCodeCastExpression (new CCodeIdentifier ("array"), "gpointer*");
+		} else {
+			cptrarray = new CCodeCastExpression (new CCodeIdentifier ("array"), "void**");
+		}
+		
 		var cea = new CCodeElementAccess (cptrarray, new CCodeIdentifier ("i"));
 
 		var cfreecond = new CCodeBinaryExpression (CCodeBinaryOperator.INEQUALITY, cea, new CCodeConstant ("NULL"));
@@ -260,9 +299,16 @@ public class Vala.CCodeArrayModule : CCodeMethodCallModule {
 
 		var fun = new CCodeFunction ("_vala_array_destroy", "void");
 		fun.modifiers = CCodeModifiers.STATIC;
-		fun.add_parameter (new CCodeParameter ("array", "gpointer"));
-		fun.add_parameter (new CCodeParameter ("array_length", "gint"));
-		fun.add_parameter (new CCodeParameter ("destroy_func", "GDestroyNotify"));
+		
+		if (CodeContext.get ().has_glib ()) {
+			fun.add_parameter (new CCodeParameter ("array", "gpointer"));
+			fun.add_parameter (new CCodeParameter ("array_length", "gint"));
+			fun.add_parameter (new CCodeParameter ("destroy_func", "GDestroyNotify"));
+		} else {
+			fun.add_parameter (new CCodeParameter ("array", "void*"));
+			fun.add_parameter (new CCodeParameter ("array_length", "int"));
+			fun.add_parameter (new CCodeParameter ("destroy_func", "ValaDestroyNotify"));			
+		}
 
 		push_function (fun);
 
@@ -284,9 +330,16 @@ public class Vala.CCodeArrayModule : CCodeMethodCallModule {
 
 		fun = new CCodeFunction ("_vala_array_free", "void");
 		fun.modifiers = CCodeModifiers.STATIC;
-		fun.add_parameter (new CCodeParameter ("array", "gpointer"));
-		fun.add_parameter (new CCodeParameter ("array_length", "gint"));
-		fun.add_parameter (new CCodeParameter ("destroy_func", "GDestroyNotify"));
+		
+		if (CodeContext.get ().has_glib ()) {
+			fun.add_parameter (new CCodeParameter ("array", "gpointer"));
+			fun.add_parameter (new CCodeParameter ("array_length", "gint"));
+			fun.add_parameter (new CCodeParameter ("destroy_func", "GDestroyNotify"));
+		} else {
+			fun.add_parameter (new CCodeParameter ("array", "void*"));
+			fun.add_parameter (new CCodeParameter ("array_length", "int"));
+			fun.add_parameter (new CCodeParameter ("destroy_func", "ValaDestroyNotify"));	
+		}
 
 		push_function (fun);
 
@@ -297,7 +350,12 @@ public class Vala.CCodeArrayModule : CCodeMethodCallModule {
 		ccall.add_argument (new CCodeIdentifier ("destroy_func"));
 		ccode.add_expression (ccall);
 
-		var carrfree = new CCodeFunctionCall (new CCodeIdentifier ("g_free"));
+		CCodeFunctionCall carrfree;
+		if (CodeContext.get ().has_glib ()) {
+			carrfree = new CCodeFunctionCall (new CCodeIdentifier ("g_free"));
+		} else {
+			carrfree = new CCodeFunctionCall (new CCodeIdentifier ("free"));
+		}
 		carrfree.add_argument (new CCodeIdentifier ("array"));
 		ccode.add_expression (carrfree);
 
@@ -305,6 +363,13 @@ public class Vala.CCodeArrayModule : CCodeMethodCallModule {
 
 		cfile.add_function_declaration (fun);
 		cfile.add_function (fun);
+		
+		if (!CodeContext.get ().has_glib ()) {
+			var destroy_func = new CCodeFunctionDeclarator ("ValaDestroyNotify");
+			destroy_func.add_parameter (new CCodeParameter ("", "void*"));
+			var destroy_func_type = new CCodeFunctionTypeDefinition (destroy_func);
+			cfile.add_type_definition (destroy_func_type);
+		}
 	}
 
 	public override void append_vala_array_move () {

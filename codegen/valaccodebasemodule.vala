@@ -3078,7 +3078,7 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 	}
 
 	public CCodeExpression? get_destroy_func_expression (DataType type, bool is_chainup = false) {
-		if (type.data_type == glist_type || type.data_type == gslist_type || type.data_type == gnode_type || type.data_type == gqueue_type) {
+		if (CodeContext.get ().has_glib () && (type.data_type == glist_type || type.data_type == gslist_type || type.data_type == gnode_type || type.data_type == gqueue_type)) {
 			// create wrapper function to free list elements if necessary
 
 			bool elements_require_free = false;
@@ -3168,9 +3168,9 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 				return get_variable_cexpression (func_name);
 			}
 		} else if (type is ArrayType) {
-			return new CCodeIdentifier ("g_free");
+			return CodeContext.get ().has_glib () ? new CCodeIdentifier ("g_free") : new CCodeIdentifier ("free");
 		} else if (type is PointerType) {
-			return new CCodeIdentifier ("g_free");
+			return CodeContext.get ().has_glib () ? new CCodeIdentifier ("g_free") : new CCodeIdentifier ("free");
 		} else {
 			return new CCodeConstant ("NULL");
 		}
@@ -3262,7 +3262,7 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 		return destroy_value (get_field_cvalue (field, instance));
 	}
 
-	public virtual CCodeExpression destroy_value (TargetValue value, bool is_macro_definition = false) {
+	public virtual CCodeExpression destroy_value (TargetValue value, bool is_macro_definition = false) {  
 		var type = value.value_type;
 		if (value.actual_value_type != null) {
 			type = value.actual_value_type;
@@ -3369,17 +3369,7 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 		/* set freed references to NULL to prevent further use */
 		var ccomma = new CCodeCommaExpression ();
 
-		if (type.data_type != null && !is_reference_counting (type.data_type) &&
-		    (context.has_glib () 
-				&& (type.data_type.is_subtype_of (gstringbuilder_type)
-				|| type.data_type.is_subtype_of (garray_type)
-				|| type.data_type.is_subtype_of (gbytearray_type)
-				|| type.data_type.is_subtype_of (gptrarray_type)))) {
-			ccall.add_argument (CCodeConstants.true);
-		} else if (type.data_type == gthreadpool_type) {
-			ccall.add_argument (new CCodeConstant ("FALSE"));
-			ccall.add_argument (CCodeConstants.true);
-		} else if (type is ArrayType) {
+		if (type is ArrayType) {
 			var array_type = (ArrayType) type;
 			if (requires_destroy (array_type.element_type)) {
 				CCodeExpression csizeexpr = null;
@@ -3403,9 +3393,20 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 						requires_array_free = true;
 						ccall.call = new CCodeIdentifier ("_vala_array_free");
 						ccall.add_argument (csizeexpr);
-						ccall.add_argument (new CCodeCastExpression (get_destroy_func_expression (array_type.element_type), "GDestroyNotify"));
+						ccall.add_argument (new CCodeCastExpression (get_destroy_func_expression (array_type.element_type), (CodeContext.get ().has_glib ()) ? "GDestroyNotify" : "ValaDestroyNotify" ));
 					}
 				}
+			}
+		} else if (CodeContext.get ().has_glib ()) {
+			if (type.data_type != null && !is_reference_counting (type.data_type) &&
+				(type.data_type.is_subtype_of (gstringbuilder_type)
+					|| type.data_type.is_subtype_of (garray_type)
+					|| type.data_type.is_subtype_of (gbytearray_type)
+					|| type.data_type.is_subtype_of (gptrarray_type))) {
+				ccall.add_argument (new CCodeConstant ("TRUE"));
+			} else if (type.data_type == gthreadpool_type) {
+				ccall.add_argument (new CCodeConstant ("FALSE"));
+				ccall.add_argument (new CCodeConstant ("TRUE"));
 			}
 		}
 		
@@ -3416,7 +3417,7 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 
 		// g_free (NULL) is allowed
 		bool uses_gfree = (type.data_type != null && !is_reference_counting (type.data_type) && get_ccode_free_function (type.data_type) == "g_free");
-		uses_gfree = uses_gfree || type is ArrayType;
+		uses_gfree = uses_gfree || (type is ArrayType && CodeContext.get ().has_glib ());
 		if (uses_gfree) {
 			return cassign;
 		}

@@ -174,19 +174,23 @@ public class Vala.ForeachStatement : Block {
 			array_type.inline_allocated = false;
 
 			return check_without_iterator (context, collection_type, array_type.element_type);
-		} else if (collection_type.compatible (context.analyzer.glist_type) || collection_type.compatible (context.analyzer.gslist_type)) {
-			if (collection_type.get_type_arguments ().size != 1) {
-				error = true;
-				Report.error (collection.source_reference, "missing type argument for collection");
-				return false;
-			}
+		} 
+		
+		if (CodeContext.get ().has_glib ()) {
+			if (collection_type.compatible (context.analyzer.glist_type) || collection_type.compatible (context.analyzer.gslist_type)) {
+				if (collection_type.get_type_arguments ().size != 1) {
+					error = true;
+					Report.error (collection.source_reference, "missing type argument for collection");
+					return false;
+				}
 
-			return check_without_iterator (context, collection_type, collection_type.get_type_arguments ().get (0));
-		} else if (collection_type.compatible (context.analyzer.gvaluearray_type)) {
-			return check_without_iterator (context, collection_type, context.analyzer.gvalue_type);
-		} else {
-			return check_with_iterator (context, collection_type);
+				return check_without_iterator (context, collection_type, collection_type.get_type_arguments ().get (0));
+			} else if (collection_type.compatible (context.analyzer.gvaluearray_type)) {
+				return check_without_iterator (context, collection_type, context.analyzer.gvalue_type);
+			}
 		}
+		
+		return check_with_iterator (context, collection_type);
 	}
 
 	bool check_with_index (CodeContext context, DataType collection_type) {

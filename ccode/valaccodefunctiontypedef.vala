@@ -1,6 +1,6 @@
-/* valaccodeparameter.vala
- *
+/* valaccodefunctiontypedef.vala
  * Copyright (C) 2006-2008  Jürg Billeter
+ * Copyright (C) 2014  Johan Mattsson
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,50 +18,35 @@
  *
  * Author:
  * 	Jürg Billeter <j@bitron.ch>
+ * 	Johan Mattsson <johan.mattsson.m@gmail.com>
  */
 
 using GLib;
 
 /**
- * Represents a formal parameter in a C method signature.
+ * Type definition for function pointers.
  */
-public class Vala.CCodeParameter : CCodeNode {
+public class Vala.CCodeFunctionTypeDefinition : CCodeNode {
+
 	/**
-	 * The parameter name.
+	 * The function type declarator.
 	 */
-	public string name { get; set; }
+	public CCodeDeclarator declarator { get; set; }
+
+	public CCodeFunctionTypeDefinition (CCodeFunctionDeclarator declarator) {
+		this.declarator = declarator;
+	}
 	
-	/**
-	 * The parameter type.
-	 */
-	public string type_name { get; set; }
-
-	/**
-	 * Specifies whether the function accepts an indefinite number of
-	 * arguments.
-	 */
-	public bool ellipsis { get; set; }
-
-	public CCodeParameter (string n, string type) {
-		name = n;
-		type_name = type;
-	}
-
-	public CCodeParameter.with_ellipsis () {
-		ellipsis = true;
-	}
-
 	public override void write (CCodeWriter writer) {
-		if (!ellipsis) {
-			writer.write_string (type_name);
-			
-			if (type_name != "") {
-				writer.write_string (" ");
-			}
-			
-			writer.write_string (name);
-		} else {
-			writer.write_string ("...");
-		}
+	}
+	
+	public override void write_declaration (CCodeWriter writer) {
+		writer.write_indent ();
+		writer.write_string ("typedef ");
+		
+		declarator.write_declaration (writer);
+		
+		writer.write_string (";");
+		writer.write_newline ();
 	}
 }

@@ -645,12 +645,18 @@ public abstract class Vala.CCodeMethodModule : CCodeStructModule {
 							if (CodeContext.get ().has_glib ()) {
 								ccall = new CCodeFunctionCall (new CCodeIdentifier ("g_slice_new0"));
 								ccall.add_argument (new CCodeIdentifier (get_ccode_name (cl)));
+								ccode.add_assignment (get_this_cexpression (), ccall);
 							} else {
-								ccall = new CCodeFunctionCall (new CCodeIdentifier ("malloc"));
-								ccall.add_argument (new CCodeIdentifier ("sizeof (" + get_ccode_name (cl) + ")"));
+								var allocate = new CCodeFunctionCall (new CCodeIdentifier ("malloc"));
+								allocate.add_argument (new CCodeIdentifier ("sizeof (" + get_ccode_name (cl) + ")"));
+								ccode.add_assignment (get_this_cexpression (), allocate);
+								
+								var initialze = new CCodeFunctionCall (new CCodeIdentifier ("memset"));
+								initialze.add_argument (get_this_cexpression ());
+								initialze.add_argument (new CCodeConstant ("0"));
+								initialze.add_argument (new CCodeIdentifier ("sizeof (" + get_ccode_name (cl) + ")"));
+								ccode.add_expression (initialze);
 							}
-							
-							ccode.add_assignment (get_this_cexpression (), ccall);
 						}
 
 						if (cl.base_class == null) {
