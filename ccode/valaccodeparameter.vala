@@ -54,11 +54,7 @@ public class Vala.CCodeParameter : CCodeNode {
 	public override void write (CCodeWriter writer) {
 		if (!ellipsis) {
 			writer.write_string (type_name);
-			
-			if (type_name != "") {
-				writer.write_string (" ");
-			}
-			
+			writer.write_string (" ");
 			writer.write_string (name);
 		} else {
 			writer.write_string ("...");

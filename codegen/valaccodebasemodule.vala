@@ -725,13 +725,13 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 		wrappers = new HashSet<string> (str_hash, str_equal);
 		generated_external_symbols = new HashSet<Symbol> ();
 	
-		if (!CodeContext.get ().nostdpkg) {
+		if (context.profile == Profile.GOBJECT) {
 			header_file.add_include ("glib.h");
 			internal_header_file.add_include ("glib.h");
 			cfile.add_include ("glib.h");
 			cfile.add_include ("glib-object.h");
 		}
-
+		
 		// always include headers for the boolean constants
 		var bool_attr = new CCodeAttribute (bool_type.data_type);
 		foreach (string header_filename in bool_attr.header_filenames.split (",")) {

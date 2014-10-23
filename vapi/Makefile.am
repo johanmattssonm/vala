@@ -250,6 +250,7 @@ dist_vapi_DATA = \
 	poppler-glib.deps \
 	poppler-glib.vapi \
 	posix.vapi \
+	posixtypes.vapi \
 	purple.deps \
 	purple.vapi \
 	raptor.vapi \

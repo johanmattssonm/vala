@@ -344,12 +344,7 @@ public class Vala.CodeContext {
 			// ignore multiple occurrences of the same package
 			return true;
 		}
-
-		if (pkg == "posix" && !nostdpkg) {
-			Report.error (null, "Both Posix and GLib packages included. Use --nostdpkg if you don't want to include glib.");	
-			return false;
-		}
-
+		
 		// first try .vapi
 		var path = get_vapi_path (pkg);
 		if (path == null) {
@@ -427,7 +422,7 @@ public class Vala.CodeContext {
 			source_file.relative_filename = filename;
 
 			// import the GLib namespace by default (namespace of backend-specific standard library)
-			if (!nostdpkg) {
+			if (!nostdpkg && profile == Profile.GOBJECT) {
 				var ns_ref = new UsingDirective (new UnresolvedSymbol (null, "GLib", null));
 				source_file.add_using_directive (ns_ref);
 				root.add_using_directive (ns_ref);

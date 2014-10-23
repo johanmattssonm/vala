@@ -244,14 +244,14 @@ class Vala.Compiler {
 		if (ccode_only && save_temps) {
 			Report.warning (null, "--save-temps has no effect when -C or --ccode is set");
 		}
-		
-		if (profile == "gobject-2.0" || profile == "gobject" || profile == null) {
-			// default profile
+
+		if (profile == "posix") {
+			context.profile = Profile.POSIX;
+		} else {
 			context.profile = Profile.GOBJECT;
 			context.add_define ("GOBJECT");
-		} else {
-			Report.error (null, "Unknown profile %s".printf (profile));
 		}
+		
 		nostdpkg |= fast_vapi_filename != null;
 		context.nostdpkg = nostdpkg;
 
@@ -287,8 +287,13 @@ class Vala.Compiler {
 
 		if (!nostdpkg) {
 			/* default packages */
-			context.add_external_package ("glib-2.0");
-			context.add_external_package ("gobject-2.0");
+			if (context.profile == Profile.GOBJECT) {
+				context.add_external_package ("glib-2.0");
+				context.add_external_package ("gobject-2.0");
+			} else if (context.profile == Profile.POSIX) {
+				context.add_external_package ("posix");
+				context.add_external_package ("posixtypes");
+			}
 		}
 
 		if (packages != null) {
