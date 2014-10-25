@@ -199,6 +199,7 @@ TESTS = \
 	dbus/bug602003.test \
 	gir/bug651773.test \
 	gir/bug667751.test \
+	profiles/posixobjects.vala \
 	$(NULL)
 
 check-TESTS: $(TESTS)
