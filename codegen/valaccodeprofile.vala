@@ -210,7 +210,7 @@ public class Vala.CCodeProfile : GLib.Object {
 				
 				if (statement.replacement != null) {
 					statement.replacement.write (writer);
-				} else {
+				} else if (statement.token != "\n") {
 					writer.write_string (statement.token);
 				}
 				
