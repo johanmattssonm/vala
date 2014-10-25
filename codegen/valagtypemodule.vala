@@ -1690,20 +1690,12 @@ public class Vala.GTypeModule : GErrorModule {
 
 			cfile.add_function_declaration (instance_finalize_context.ccode);
 		} else if (cl.base_class == null) {
-			if (CodeContext.get ().has_glib ()) {
-				var ccall = new CCodeFunctionCall (new CCodeIdentifier ("g_slice_free"));
-				ccall.add_argument (new CCodeIdentifier (get_ccode_name (cl)));
-				ccall.add_argument (new CCodeIdentifier ("self"));
-				push_context (instance_finalize_context);
-				ccode.add_expression (ccall);
-				pop_context ();
-			} else {
-				var ccall = new CCodeFunctionCall (new CCodeIdentifier ("free"));
-				ccall.add_argument (new CCodeIdentifier ("self"));
-				push_context (instance_finalize_context);
-				ccode.add_expression (ccall);
-				pop_context ();
-			}
+			var self_type_name = new CCodeIdentifier (get_ccode_name (cl));
+			var self_name = new CCodeIdentifier ("self");
+			var slice_free = ccode_profile.slice_free (self_type_name, self_name);
+			push_context (instance_finalize_context);
+			ccode.add_statement (slice_free);
+			pop_context ();
 		}
 
 		cfile.add_function (instance_finalize_context.ccode);

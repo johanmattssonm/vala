@@ -12,6 +12,7 @@ SUBDIRS = \
 	doc \
 	gobject-introspection \
 	vapigen \
+	profiles \
 	$(NULL)
 
 if ENABLE_UNVERSIONED

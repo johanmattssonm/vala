@@ -215,10 +215,11 @@ public abstract class Vala.CCodeStructModule : CCodeBaseModule {
 
 		ccode.add_declaration (get_ccode_name (st) + "*", new CCodeVariableDeclarator ("dup"));
 
-		var creation_call = new CCodeFunctionCall (new CCodeIdentifier ("g_new0"));
-		creation_call.add_argument (new CCodeConstant (get_ccode_name (st)));
-		creation_call.add_argument (new CCodeConstant ("1"));
-		ccode.add_assignment (new CCodeIdentifier ("dup"), creation_call);
+		var target_type_name = new CCodeIdentifier (get_ccode_name (st));
+		var dup_name = new CCodeIdentifier ("dup");
+		var items = new CCodeConstant ("1");	
+		var creation_call = ccode_profile.allocate (target_type_name, dup_name, items);
+		ccode.add_statement (creation_call);
 
 		if (st.is_disposable ()) {
 			var copy_call = new CCodeFunctionCall (new CCodeIdentifier (get_ccode_copy_function (st)));

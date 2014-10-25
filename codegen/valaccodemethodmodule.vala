@@ -640,23 +640,11 @@ public abstract class Vala.CCodeMethodModule : CCodeStructModule {
 
 						if (!((CreationMethod) m).chain_up) {
 							// TODO implicitly chain up to base class as in add_object_creation
-							CCodeFunctionCall ccall;
-							
-							if (CodeContext.get ().has_glib ()) {
-								ccall = new CCodeFunctionCall (new CCodeIdentifier ("g_slice_new0"));
-								ccall.add_argument (new CCodeIdentifier (get_ccode_name (cl)));
-								ccode.add_assignment (get_this_cexpression (), ccall);
-							} else {
-								var allocate = new CCodeFunctionCall (new CCodeIdentifier ("malloc"));
-								allocate.add_argument (new CCodeIdentifier ("sizeof (" + get_ccode_name (cl) + ")"));
-								ccode.add_assignment (get_this_cexpression (), allocate);
-								
-								var initialze = new CCodeFunctionCall (new CCodeIdentifier ("memset"));
-								initialze.add_argument (get_this_cexpression ());
-								initialze.add_argument (new CCodeConstant ("0"));
-								initialze.add_argument (new CCodeIdentifier ("sizeof (" + get_ccode_name (cl) + ")"));
-								ccode.add_expression (initialze);
-							}
+		
+							var self_type_name = new CCodeIdentifier (get_ccode_name (cl));
+							var self_name = get_this_cexpression ();
+							var alloc = ccode_profile.slice_new (self_type_name, self_name);
+							ccode.add_statement (alloc);
 						}
 
 						if (cl.base_class == null) {

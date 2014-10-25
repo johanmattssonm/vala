@@ -827,10 +827,23 @@ public class Vala.CCodeAttribute : AttributeCache {
 			if (cl.base_class != null) {
 				return CCodeBaseModule.get_ccode_free_function (cl.base_class);
 			}
-			return lower_case_prefix + "free";
+			
+			// FIXME: this is confusing, please clean it up if you know why 
+			// the function somtimes is called free and other times finalize
+			// /Johan.
+			
+			if (CodeContext.get ().has_glib ()) {
+				return lower_case_prefix + "free";
+			} else {
+				return lower_case_prefix + "finalize";
+			}
 		} else if (sym is Struct) {
 			if (!sym.external_package) {
-				return lower_case_prefix + "free";
+				if (CodeContext.get ().has_glib ()) {
+					return lower_case_prefix + "free";
+				} else {
+					return lower_case_prefix + "finalize";
+				}
 			}
 		}
 		return null;

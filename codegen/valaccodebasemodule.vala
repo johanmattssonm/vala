@@ -340,6 +340,8 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 
 	public static int ccode_attribute_cache_index = CodeNode.get_attribute_cache_index ();
 
+	public CCodeProfile ccode_profile;
+
 	public CCodeBaseModule () {
 		predefined_marshal_set = new HashSet<string> (str_hash, str_equal);
 		predefined_marshal_set.add ("VOID:VOID");
@@ -414,8 +416,13 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 
 	public override void emit (CodeContext context) {
 		this.context = context;
-
 		root_symbol = context.root;
+		ccode_profile = new CCodeProfile (context.profile);
+
+		if (!ccode_profile.has_definitions ()) {
+			Report.error (null, "No profile found.");
+			return;
+		}
 
 		bool_type = new BooleanType ((Struct) root_symbol.scope.lookup ("bool"));
 		char_type = new IntegerType ((Struct) root_symbol.scope.lookup ("char"));
@@ -2903,10 +2910,11 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 		} else {
 			ccode.add_declaration (get_ccode_name (value_type), new CCodeVariableDeclarator ("dup"));
 
-			var creation_call = new CCodeFunctionCall (new CCodeIdentifier ("g_new0"));
-			creation_call.add_argument (new CCodeConstant (get_ccode_name (value_type.data_type)));
-			creation_call.add_argument (new CCodeConstant ("1"));
-			ccode.add_assignment (new CCodeIdentifier ("dup"), creation_call);
+			var dest_type = new CCodeIdentifier (get_ccode_name (value_type.data_type));
+			var dest_name = new CCodeIdentifier ("dup");
+			var items = new CCodeConstant ("1");
+			var creation_call = ccode_profile.allocate (dest_type, dest_name, items);
+			ccode.add_statement (creation_call);
 
 			var st = value_type.data_type as Struct;
 			if (st != null && st.is_disposable ()) {
@@ -3078,7 +3086,7 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 	}
 
 	public CCodeExpression? get_destroy_func_expression (DataType type, bool is_chainup = false) {
-		if (CodeContext.get ().has_glib () && (type.data_type == glist_type || type.data_type == gslist_type || type.data_type == gnode_type || type.data_type == gqueue_type)) {
+		if (CodeContext.get ().has_glib () && (type.data_type == glist_type || type.data_type == gnode_type || type.data_type == gqueue_type)) {
 			// create wrapper function to free list elements if necessary
 
 			bool elements_require_free = false;
@@ -5645,11 +5653,11 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 			}
 
 			if (target_type.nullable) {
-				var newcall = new CCodeFunctionCall (new CCodeIdentifier ("g_new0"));
-				newcall.add_argument (new CCodeConstant ("GValue"));
-				newcall.add_argument (new CCodeConstant ("1"));
-				var newassignment = new CCodeAssignment (get_cvalue_ (temp_value), newcall);
-				ccode.add_expression (newassignment);
+				var target_type_name = new CCodeIdentifier ("GValue");
+				var temp_name = get_cvalue_ (temp_value);
+				var items = new CCodeConstant ("1");
+				var newcall = ccode_profile.allocate (target_type_name, temp_name, items);
+				ccode.add_statement (newcall);
 			}
 
 			var ccall = new CCodeFunctionCall (new CCodeIdentifier ("g_value_init"));
@@ -6616,13 +6624,17 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 		return glib_value.cvalue;
 	}
 
-	public void set_cvalue (Expression expr, CCodeExpression? cvalue) {
+	/** Set cvalue for the expr. 
+	 * @return the target value expression
+	 */
+	public GLibValue set_cvalue (Expression expr, CCodeExpression? cvalue) {
 		var glib_value = (GLibValue) expr.target_value;
 		if (glib_value == null) {
 			glib_value = new GLibValue (expr.value_type);
 			expr.target_value = glib_value;
 		}
 		glib_value.cvalue = cvalue;
+		return glib_value;
 	}
 
 	public CCodeExpression? get_array_size_cvalue (TargetValue value) {

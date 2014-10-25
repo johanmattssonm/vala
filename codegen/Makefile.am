@@ -28,6 +28,7 @@ libvala_la_VALASOURCES = \
 	valaccodememberaccessmodule.vala \
 	valaccodemethodcallmodule.vala \
 	valaccodemethodmodule.vala \
+	valaccodeprofile.vala \
 	valaccodestructmodule.vala \
 	valaclassregisterfunction.vala \
 	valactype.vala \

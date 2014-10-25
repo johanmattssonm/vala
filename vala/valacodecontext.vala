@@ -491,6 +491,17 @@ public class Vala.CodeContext {
 		return (define in defines);
 	}
 
+	public string? get_profile_path (string profile) {
+		var path = get_file_path (profile + ".profile", "vala" + Config.PACKAGE_SUFFIX + "/profiles", "vala/profiles", null);
+
+		var filename = Path.build_path ("/", Config.PACKAGE_DATADIR, "profiles", profile + ".profile");
+		if (FileUtils.test (filename, FileTest.EXISTS)) {
+			path = filename;
+		}
+			
+		return path;
+	}
+	
 	public string? get_vapi_path (string pkg) {
 		var path = get_file_path (pkg + ".vapi", "vala" + Config.PACKAGE_SUFFIX + "/vapi", "vala/vapi", vapi_directories);
 
@@ -531,7 +542,7 @@ public class Vala.CodeContext {
 		return null;
 	}
 
-	string? get_file_path (string basename, string? versioned_data_dir, string? data_dir, string[] directories) {
+	string? get_file_path (string basename, string? versioned_data_dir, string? data_dir, string[]? directories) {
 		string filename = null;
 
 		if (directories != null) {

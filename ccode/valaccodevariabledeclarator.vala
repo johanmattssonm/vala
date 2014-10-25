@@ -60,6 +60,13 @@ public class Vala.CCodeVariableDeclarator : CCodeDeclarator {
 		this.init0 = true;
 	}
 
+	public CCodeVariableDeclarator.with_type (string type, string name, CCodeExpression? initializer, CCodeDeclaratorSuffix? declarator_suffix = null) {
+		this.name = name;
+		this.initializer = initializer;
+		this.declarator_suffix = declarator_suffix;
+		this.init0 = true;
+	}
+
 	public override void write (CCodeWriter writer) {
 		writer.write_string (name);
 
