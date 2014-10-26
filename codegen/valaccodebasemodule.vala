@@ -739,6 +739,24 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 			cfile.add_include ("glib-object.h");
 		}
 		
+		if (context.profile == Profile.POSIX) {
+			header_file.add_include ("stdlib.h");
+			internal_header_file.add_include ("stdlib.h");
+			cfile.add_include ("stdlib.h");
+
+			header_file.add_include ("assert.h");
+			internal_header_file.add_include ("assert.h");
+			cfile.add_include ("assert.h");
+
+			header_file.add_include ("stdio.h");
+			internal_header_file.add_include ("stdio.h");
+			cfile.add_include ("stdio.h");
+			
+			header_file.add_include ("string.h");
+			internal_header_file.add_include ("string.h");
+			cfile.add_include ("string.h");			
+		}
+			
 		// always include headers for the boolean constants
 		var bool_attr = new CCodeAttribute (bool_type.data_type);
 		foreach (string header_filename in bool_attr.header_filenames.split (",")) {
