@@ -414,7 +414,7 @@ public class string {
 		string? s;
 		va_list input = va_list ();
 		va_list input_count = input.copy (input);
-		int this_length, string2_length;
+		int this_length, string2_length, var_string_length;
 
 		// determine the size of the new string
 		this_length = this.length;
@@ -429,16 +429,25 @@ public class string {
 		buffer = new char[buffer_size];
 		
 		// copy the strings
-		Posix.strcpy ((string) buffer, this);
-		start_position = (char*) this + this_length;
-		
-		Posix.strcpy ((string) start_position, string2);
-		start_position += string2_length;
+		if (this_length > 0) {
+			Posix.strcpy ((string) buffer, this);
+			start_position = (char*) buffer + this_length;
+		}
+
+		if (string2_length > 0) {
+			Posix.strcpy ((string) start_position, string2);
+			start_position += string2_length;
+		}
 		
 		s = input.arg<string?> ();	
 		while (s != null) {
-			Posix.strcpy ((string) start_position, (!) s);
-			start_position += ((!) s).length;
+			var_string_length = ((!) s).length;
+			
+			if (var_string_length > 0) {
+				Posix.strcpy ((string) start_position, (!) s);
+				start_position += var_string_length;	
+			}
+			
 			s = input.arg<string?> ();
 		}
 		
