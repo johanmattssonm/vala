@@ -1609,7 +1609,7 @@ public class Vala.GTypeModule : GErrorModule {
 
 		bool is_gsource = cl.base_class == gsource_type;
 
-		if (!cl.is_compact || is_gsource) {
+		if ((!cl.is_compact || is_gsource) && CodeContext.get ().has_glib ()) {
 			var fundamental_class = cl;
 			while (fundamental_class.base_class != null) {
 				fundamental_class = fundamental_class.base_class;
