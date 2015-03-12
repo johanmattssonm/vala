@@ -65,6 +65,10 @@ public class Vala.CCodeProfile : GLib.Object {
 	public CCodeNode free (CCodeNode variable) {
 		return get_cstatement ("free", variable);
 	}
+
+	public CCodeNode log (CCodeNode message) {
+		return get_cstatement ("log", message);
+	}
 	
 	public bool has_definitions () {
 		return defs != null && defs.definitions.size > 0;

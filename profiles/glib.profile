@@ -35,3 +35,7 @@ definition slice_new (type, variable)
 
 definition slice_free (type, variable)
 	g_slice_free (type, variable);
+	
+definition log (message)
+	g_print (message);
+	

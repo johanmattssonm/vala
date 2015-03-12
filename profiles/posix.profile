@@ -42,3 +42,6 @@ definition slice_free (type, variable)
 	if (variable != NULL) {
 		free (variable);
 	}
+	
+definition log (message)
+	printf (message); 

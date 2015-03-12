@@ -28,6 +28,7 @@ public class Vala.CCodeMethodCallModule : CCodeAssignmentModule {
 	public override void visit_method_call (MethodCall expr) {
 		// the bare function call
 		var ccall = new CCodeFunctionCall (get_cvalue (expr.call));
+		var ccode_profile = new CCodeProfile (context.profile);
 
 		CCodeFunctionCall async_call = null;
 		CCodeFunctionCall finish_call = null;
@@ -35,6 +36,14 @@ public class Vala.CCodeMethodCallModule : CCodeAssignmentModule {
 		Method m = null;
 		Delegate deleg = null;
 		List<Parameter> params;
+		
+		// log all method calls
+		if (CodeContext.get ().log_calls) {
+			var class_name = expr.call.value_type.to_string ();
+			var vala_name = new CCodeConstant ("\"" + class_name + "\"\\n");
+ 			var log_methon_call = ccode_profile.log (vala_name);
+			ccode.add_statement (log_methon_call);
+		}
 		
 		var ma = expr.call as MemberAccess;
 		

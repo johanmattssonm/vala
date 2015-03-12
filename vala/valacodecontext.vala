@@ -235,6 +235,8 @@ public class Vala.CodeContext {
 	 */
 	public UsedAttr used_attr { get; set; }
 
+	public bool log_calls { get; set; }
+
 	public CodeContext () {
 		resolver = new SymbolResolver ();
 		analyzer = new SemanticAnalyzer ();

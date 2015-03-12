@@ -88,6 +88,7 @@ class Vala.Compiler {
 	static bool fatal_warnings;
 	static bool disable_diagnostic_colors;
 	static string dependencies;
+	static bool log_calls;
 
 	static string entry_point;
 
@@ -148,6 +149,7 @@ class Vala.Compiler {
 		{ "gresources", 0, 0, OptionArg.STRING_ARRAY, ref gresources, "XML of gresources", "FILE..." },
 		{ "enable-version-header", 0, 0, OptionArg.NONE, ref enable_version_header, "Write vala build version in generated files", null },
 		{ "disable-version-header", 0, 0, OptionArg.NONE, ref disable_version_header, "Do not write vala build version in generated files", null },
+		{ "log-calls", 0, 0, OptionArg.NONE, ref log_calls, "Log all method calls", null },
 		{ "", 0, 0, OptionArg.FILENAME_ARRAY, ref sources, null, "FILE..." },
 		{ null }
 	};
@@ -253,6 +255,7 @@ class Vala.Compiler {
 		
 		nostdpkg |= fast_vapi_filename != null;
 		context.nostdpkg = nostdpkg;
+		context.log_calls = log_calls;
 
 		context.entry_point_name = entry_point;
 
