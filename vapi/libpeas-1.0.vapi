@@ -9,7 +9,7 @@ namespace Peas {
 		public void add_search_path (string module_dir, string? data_dir);
 		public Peas.Extension create_extension (Peas.PluginInfo info, GLib.Type extension_type, ...);
 		public Peas.Extension create_extensionv (Peas.PluginInfo info, GLib.Type extension_type, [CCode (array_length_cname = "n_parameters", array_length_pos = 2.5, array_length_type = "guint")] GLib.Parameter[]? parameters);
-		public void enable_loader (string loader_id);
+		public void enable_loader (string loader_name);
 		public void garbage_collect ();
 		public static unowned Peas.Engine get_default ();
 		[CCode (array_length = false, array_null_terminated = true)]
@@ -24,8 +24,12 @@ namespace Peas {
 		public bool try_load_plugin (Peas.PluginInfo info);
 		[CCode (cname = "peas_engine_unload_plugin")]
 		public bool try_unload_plugin (Peas.PluginInfo info);
+		[CCode (has_construct_function = false)]
+		public Engine.with_nonglobal_loaders ();
 		[CCode (array_length = false, array_null_terminated = true)]
 		public string[] loaded_plugins { owned get; set; }
+		[NoAccessorMethod]
+		public bool nonglobal_loaders { get; construct; }
 		public void* plugin_list { get; }
 		public virtual signal void load_plugin (Peas.PluginInfo info);
 		public virtual signal void unload_plugin (Peas.PluginInfo info);
@@ -68,6 +72,8 @@ namespace Peas {
 		protected ObjectModule ();
 		public void register_extension_factory (GLib.Type iface_type, owned Peas.FactoryFunc factory_func);
 		public void register_extension_type (GLib.Type iface_type, GLib.Type extension_type);
+		[NoAccessorMethod]
+		public bool local_linkage { get; construct; }
 		[NoAccessorMethod]
 		public string module_name { owned get; construct; }
 		[NoAccessorMethod]

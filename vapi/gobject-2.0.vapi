@@ -71,6 +71,8 @@ namespace GLib {
 
 		public void query (out TypeQuery query);
 
+		public int get_instance_count ();
+
 		public TypeClass class_ref ();
 		public unowned TypeClass class_peek ();
 
@@ -315,6 +317,7 @@ namespace GLib {
 		public weak GLib.Object target { get; }
 		public string target_property { get; }
 		public GLib.BindingFlags flags { get; }
+		[DestroysInstance]
 		public void unbind ();
 	}
 

@@ -37,6 +37,8 @@ TESTS = \
 	basic-types/bug659975.vala \
 	basic-types/bug678791.vala \
 	basic-types/bug686336.vala \
+	basic-types/bug729907.vala \
+	basic-types/bug731017.vala \
 	namespaces.vala \
 	methods/lambda.vala \
 	methods/closures.vala \
@@ -50,6 +52,7 @@ TESTS = \
 	methods/bug613483.vala \
 	methods/bug620673.vala \
 	methods/bug622570.vala \
+	methods/bug626783.vala \
 	methods/bug639054.vala \
 	methods/bug642885.vala \
 	methods/bug642899.vala \
@@ -64,6 +67,8 @@ TESTS = \
 	methods/bug723195.vala \
 	methods/bug726347.vala \
 	methods/bug736235.vala \
+	methods/bug737222.vala \
+	methods/bug743877.vala \
 	methods/generics.vala \
 	control-flow/break.vala \
 	control-flow/expressions-conditional.vala \
@@ -186,6 +191,7 @@ TESTS = \
 	asynchronous/bug654336.vala \
 	asynchronous/bug654337.vala \
 	asynchronous/bug661961.vala \
+	asynchronous/bug742621.vala \
 	asynchronous/closures.vala \
 	dbus/basic-types.test \
 	dbus/arrays.test \
@@ -201,6 +207,7 @@ TESTS = \
 	gir/bug651773.test \
 	gir/bug667751.test \
 	profiles/posixobjects.vala \
+	gir/bug742012.test \
 	$(NULL)
 
 check-TESTS: $(TESTS)

@@ -140,6 +140,8 @@ InputStream
   .read_finish throws="GLib.IOError"
   .skip throws="GLib.IOError"
   .skip_finish throws="GLib.IOError"
+ListModel
+  .get_item#method skip=false abstract
 MemoryOutputStream
   .get_data type="unowned uint8[]"
   .steal_data type="uint8[]"
@@ -355,6 +357,7 @@ DataInputStream
   .read_line.length default=null
 
 // Forward upstream
+*_autoptr skip
 content_type_from_mime_type nullable
 content_type_get_mime_type nullable
 ActionGroup

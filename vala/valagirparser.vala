@@ -79,7 +79,8 @@ public class Vala.GirParser : CodeVisitor {
 		EXPERIMENTAL,
 		FLOATING,
 		TYPE_ID,
-		RETURN_VOID;
+		RETURN_VOID,
+		DELEGATE_TARGET_CNAME;
 
 		public static ArgumentType? from_string (string name) {
 			var enum_class = (EnumClass) typeof(ArgumentType).class_ref ();
@@ -981,7 +982,7 @@ public class Vala.GirParser : CodeVisitor {
 					if (prop.get_accessor != null) {
 						var m = getter != null ? getter.symbol as Method : null;
 						// ensure getter vfunc if the property is abstract
-						if (m != null && (m.is_abstract || m.is_virtual || !prop.is_abstract)) {
+						if (m != null) {
 							getter.process (parser);
 							if (m.return_type is VoidType || m.get_parameters().size != 0) {
 								prop.set_attribute ("NoAccessorMethod", true);
@@ -993,26 +994,62 @@ public class Vala.GirParser : CodeVisitor {
 										}
 									}
 								}
+								
 								prop.get_accessor.value_type.value_owned = m.return_type.value_owned;
+
+								if (!m.is_abstract && !m.is_virtual && prop.is_abstract) {
+									prop.set_attribute ("ConcreteAccessor", true);
+								}
 							}
 						} else {
 							prop.set_attribute ("NoAccessorMethod", true);
 						}
 					}
+
 					if (prop.get_attribute ("NoAccessorMethod") == null && prop.set_accessor != null && prop.set_accessor.writable) {
 						var m = setter != null ? setter.symbol as Method : null;
 						// ensure setter vfunc if the property is abstract
-						if (m != null && (m.is_abstract || m.is_virtual || !prop.is_abstract)) {
+						if (m != null) {
 							setter.process (parser);
 							if (!(m.return_type is VoidType) || m.get_parameters().size != 1) {
 								prop.set_attribute ("NoAccessorMethod", true);
+								prop.set_attribute ("ConcreteAccessor", false);
 							} else {
 								prop.set_accessor.value_type.value_owned = m.get_parameters()[0].variable_type.value_owned;
+								if (prop.get_attribute ("ConcreteAccessor") != null && !m.is_abstract && !m.is_virtual && prop.is_abstract) {
+									prop.set_attribute ("ConcreteAccessor", true);
+									prop.set_attribute ("NoAccessorMethod", false);
+								}
 							}
 						} else {
 							prop.set_attribute ("NoAccessorMethod", true);
+							prop.set_attribute ("ConcreteAccessor", false);
 						}
 					}
+
+					if (prop.get_attribute ("NoAccessorMethod") != null) {
+						if (!prop.overrides && parent.symbol is Class) {
+							// bug 742012
+							// find base interface property with ConcreteAccessor and this overriding property with NoAccessorMethod
+							var base_prop_node = parser.base_interface_property (this);
+							if (base_prop_node != null) {
+								base_prop_node.process (parser);
+								
+								var base_property = (Property) base_prop_node.symbol;
+								if (base_property.get_attribute ("ConcreteAccessor") != null) {
+									prop.set_attribute ("NoAccessorMethod", false);
+									if (prop.get_accessor != null) {
+										prop.get_accessor.value_type.value_owned = base_property.get_accessor.value_type.value_owned;
+									}
+									if (prop.set_accessor != null) {
+										prop.set_accessor.value_type.value_owned = base_property.set_accessor.value_type.value_owned;
+									}
+									
+								}
+							}
+						}
+					}
+
 					if (prop.get_attribute ("NoAccessorMethod") != null) {
 						// gobject defaults
 						if (prop.get_accessor != null) {
@@ -1028,6 +1065,10 @@ public class Vala.GirParser : CodeVisitor {
 					if (colliding.size > 1) {
 						// whatelse has precedence over the field
 						merged = true;
+					}
+
+					if (metadata.has_argument (ArgumentType.DELEGATE_TARGET_CNAME)) {
+						field.set_attribute_string ("CCode", "delegate_target_cname", metadata.get_string (ArgumentType.DELEGATE_TARGET_CNAME));
 					}
 
 					if (field.variable_type is DelegateType && parent.gtype_struct_for != null) {
@@ -3897,4 +3938,34 @@ public class Vala.GirParser : CodeVisitor {
 		}
 		return true;
 	}
+
+	/* Helper methods */
+
+	Node? base_interface_property (Node prop_node) {
+		var cl = prop_node.parent.symbol as Class;
+		if (cl == null) {
+			return null;
+		}
+
+		foreach (DataType type in cl.get_base_types ()) {
+			if (!(type is UnresolvedType)) {
+				continue;
+			}
+
+			var base_node = resolve_node (prop_node.parent, ((UnresolvedType) type).unresolved_symbol);
+			if (base_node != null && base_node.symbol is Interface) {
+				var base_prop_node = base_node.lookup (prop_node.name);
+				if (base_prop_node != null && base_prop_node.symbol is Property) {
+					var base_property = (Property) base_prop_node.symbol;
+					if (base_property.is_abstract || base_property.is_virtual) {
+						// found
+						return base_prop_node;
+					}
+				}
+			}
+		}
+
+		return null;
+	}
+
 }

@@ -230,10 +230,16 @@ public class Vala.CodeContext {
 	 */
 	public CodeGenerator codegen { get; set; }
 
+	/**
+	 * Mark attributes used by the compiler and report unused at the end.
+	 */
+	public UsedAttr used_attr { get; set; }
+
 	public CodeContext () {
 		resolver = new SymbolResolver ();
 		analyzer = new SemanticAnalyzer ();
 		flow_analyzer = new FlowAnalyzer ();
+		used_attr = new UsedAttr ();
 	}
 
 	/**
@@ -648,7 +654,8 @@ public class Vala.CodeContext {
 					rpath += Path.DIR_SEPARATOR_S;
 				}
 
-				rpath += start.substring (0, len);
+				// don't use len, substring works on bytes
+				rpath += start.substring (0, (long)((char*)end - (char*)start));
 			}
 		}
 

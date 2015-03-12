@@ -779,6 +779,9 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 
 		if (requires_assert) {
 			cfile.add_type_declaration (new CCodeMacroReplacement.with_expression ("_vala_assert(expr, msg)", new CCodeConstant ("if G_LIKELY (expr) ; else g_assertion_message_expr (G_LOG_DOMAIN, __FILE__, __LINE__, G_STRFUNC, msg);")));
+			cfile.add_type_declaration (new CCodeMacroReplacement.with_expression ("_vala_return_if_fail(expr, msg)", new CCodeConstant ("if G_LIKELY (expr) ; else { g_return_if_fail_warning (G_LOG_DOMAIN, G_STRFUNC, msg); return; }")));
+			cfile.add_type_declaration (new CCodeMacroReplacement.with_expression ("_vala_return_val_if_fail(expr, msg, val)", new CCodeConstant ("if G_LIKELY (expr) ; else { g_return_if_fail_warning (G_LOG_DOMAIN, G_STRFUNC, msg); return val; }")));
+			cfile.add_type_declaration (new CCodeMacroReplacement.with_expression ("_vala_warn_if_fail(expr, msg)", new CCodeConstant ("if G_LIKELY (expr) ; else g_warn_message (G_LOG_DOMAIN, __FILE__, __LINE__, G_STRFUNC, msg);")));
 		}
 		if (requires_array_free) {
 			append_vala_array_free ();
@@ -1376,6 +1379,16 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 		} else if (cexpr is CCodeCastExpression) {
 			var ccast = (CCodeCastExpression) cexpr;
 			return is_constant_ccode_expression (ccast.inner);
+		} else if (cexpr is CCodeUnaryExpression) {
+			var cunary = (CCodeUnaryExpression) cexpr;
+			switch (cunary.operator) {
+				case CCodeUnaryOperator.PREFIX_INCREMENT:
+				case CCodeUnaryOperator.PREFIX_DECREMENT:
+				case CCodeUnaryOperator.POSTFIX_INCREMENT:
+				case CCodeUnaryOperator.POSTFIX_DECREMENT:
+					return false;
+			}
+			return is_constant_ccode_expression (cunary.inner);
 		} else if (cexpr is CCodeBinaryExpression) {
 			var cbinary = (CCodeBinaryExpression) cexpr;
 			return is_constant_ccode_expression (cbinary.left) && is_constant_ccode_expression (cbinary.right);
@@ -5773,7 +5786,16 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 			result.lvalue = result.lvalue && result.cvalue == old_cexpr;
 		}
 
-		if (!gvalue_boxing && !gvariant_boxing && target_type.value_owned && (!type.value_owned || boxing || unboxing) && requires_copy (target_type) && !(type is NullType)) {
+		bool array_needs_copy = false;
+		if (type is ArrayType && target_type is ArrayType) {
+			var array = (ArrayType) type;
+			var target_array = (ArrayType) target_type;
+			if (target_array.element_type.value_owned && !array.element_type.value_owned) {
+				array_needs_copy = requires_copy (target_array.element_type);
+			}
+		}
+		
+		if (!gvalue_boxing && !gvariant_boxing && target_type.value_owned && (!type.value_owned || boxing || unboxing || array_needs_copy) && requires_copy (target_type) && !(type is NullType)) {
 			// need to copy value
 			var copy = (GLibValue) copy_value (result, node);
 			if (target_type.data_type is Interface && copy == null) {
@@ -6343,6 +6365,10 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 		return p.get_attribute ("NoAccessorMethod") != null;
 	}
 
+	public static bool get_ccode_concrete_accessor (Property p) {
+		return p.get_attribute ("ConcreteAccessor") != null;
+	}
+
 	public static bool get_ccode_has_type_id (TypeSymbol sym) {
 		return sym.get_attribute_bool ("CCode", "has_type_id", true);
 	}
@@ -6455,11 +6481,14 @@ public abstract class Vala.CCodeBaseModule : CodeGenerator {
 	}
 
 	public void create_postcondition_statement (Expression postcondition) {
-		var cassert = new CCodeFunctionCall (new CCodeIdentifier ("g_warn_if_fail"));
+		var cassert = new CCodeFunctionCall (new CCodeIdentifier ("_vala_warn_if_fail"));
 
 		postcondition.emit (this);
 
+		string message = ((string) postcondition.source_reference.begin.pos).substring (0, (int) (postcondition.source_reference.end.pos - postcondition.source_reference.begin.pos));
 		cassert.add_argument (get_cvalue (postcondition));
+		cassert.add_argument (new CCodeConstant ("\"%s\"".printf (message.replace ("\n", " ").escape (""))));
+		requires_assert = true;
 
 		ccode.add_expression (cassert);
 	}

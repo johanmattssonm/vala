@@ -174,8 +174,7 @@ class Vala.Compiler {
 		CodeContext.push (context);
 
 		if (disable_diagnostic_colors == false) {
-			string[] env_args = Environ.get ();
-			unowned string env_colors = Environ.get_variable (env_args, "VALA_COLORS");
+			unowned string env_colors = Environment.get_variable ("VALA_COLORS");
 			if (env_colors != null) {
 				context.report.set_colors (env_colors);
 			} else {
@@ -463,6 +462,12 @@ class Vala.Compiler {
 			context.write_dependencies (dependencies);
 		}
 
+		context.used_attr.check_unused (context);
+
+		if (context.report.get_errors () > 0 || (fatal_warnings && context.report.get_warnings () > 0)) {
+			return quit ();
+		}
+		
 		if (!ccode_only) {
 			var ccompiler = new CCodeCompiler ();
 			if (cc_command == null && Environment.get_variable ("CC") != null) {

@@ -1152,7 +1152,7 @@ public class string {
 	[CCode (cname = "g_ascii_strtoull")]
 	public uint64 to_uint64 (out unowned string endptr = null, int _base = 0);
 	[CCode (cname = "g_str_tokenize_and_fold", array_length = false, array_null_terminated = true)]
-	public string[] tokenize_and_fold (string transit_locale, out string[] alternates);
+	public string[] tokenize_and_fold (string transit_locale, [CCode (array_length = false, array_null_terminated = true)] out string[] ascii_alternates);
 
 	[Deprecated (replacement = "bool.parse")]
 	public bool to_bool () {
@@ -2245,7 +2245,9 @@ namespace GLib {
 
 	/* String Utility Functions */
 
+	public void strfreev (string** str_array);
 	public uint strv_length ([CCode (array_length = false, array_null_terminated = true)] string[] str_array);
+	public bool strv_contains ([CCode (array_length = false, array_null_terminated = true)] string[] str_array, string str);
 
 	[CCode (cname = "errno", cheader_filename = "errno.h")]
 	public int errno;
@@ -3303,7 +3305,11 @@ namespace GLib {
 	}
 
 	[Compact]
+#if GLIB_2_44
+	[CCode (ref_function = "g_option_context_ref", unref_function = "g_option_context_unref", type_id = "G_TYPE_OPTION_GROUP")]
+#else
 	[CCode (free_function = "g_option_context_free")]
+#endif
 	public class OptionContext {
 		public OptionContext (string? parameter_string = null);
 		public void set_summary (string summary);
@@ -3323,6 +3329,8 @@ namespace GLib {
 		public void add_group (owned OptionGroup group);
 		public void set_main_group (owned OptionGroup group);
 		public unowned OptionGroup get_main_group ();
+		public void set_strict_posix (bool strict_posix);
+		public bool get_strict_posix ();
 	}
 
 	public delegate unowned string TranslateFunc (string str);
@@ -4177,6 +4185,9 @@ namespace GLib {
 		[CCode (cname = "g_hash_table_insert")]
 		public void @set (owned K key, owned V value);
 		public List<unowned K> get_keys ();
+#if VALA_0_26
+		public (unowned K)[] get_keys_as_array ();
+#endif
 		public List<unowned V> get_values ();
 		public void @foreach (HFunc<K,V> func);
 		[CCode (cname = "g_hash_table_foreach")]
@@ -4684,7 +4695,7 @@ namespace GLib {
 
 	namespace Intl {
 		[CCode (cname = "setlocale", cheader_filename = "locale.h")]
-		public static unowned string? setlocale (LocaleCategory category, string? locale);
+		public static unowned string? setlocale (LocaleCategory category = GLib.LocaleCategory.ALL, string? locale = "");
 		[CCode (cname = "bindtextdomain", cheader_filename = "glib/gi18n-lib.h")]
 		public static unowned string? bindtextdomain (string domainname, string? dirname);
 		[CCode (cname = "textdomain", cheader_filename = "glib/gi18n-lib.h")]
@@ -4901,27 +4912,35 @@ namespace GLib {
 
 		public Variant.strv (string[] value);
 		[CCode (array_length_type = "size_t")]
+#if VALA_0_26
+		public (unowned string)[] get_strv ();
+#else
 		public string*[] get_strv ();
+#endif
 		[CCode (array_length_type = "size_t")]
 		public string[] dup_strv ();
 
 		public Variant.bytestring_array (string[] value);
 		[CCode (array_length_type = "size_t")]
+#if VALA_0_26
+		public (unowned string)[] get_bytestring_array ();
+#else
 		public string*[] get_bytestring_array ();
+#endif
 		[CCode (array_length_type = "size_t")]
 		public string[] dup_bytestring_array ();
 
-		#if GLIB_2_30
+#if GLIB_2_30
 		public Variant.objv (string[] value);
 		[CCode (array_length_type = "size_t")]
-		#if VALA_0_26
+#if VALA_0_26
 		public (unowned string)[] get_objv ();
-		#else
+#else
 		public string*[] get_objv ();
-		#endif
+#endif
 		[CCode (array_length_type = "size_t")]
 		public string[] dup_objv ();
-		#endif
+#endif
 
 		public Variant (string format, ...);
 		// note: the function changes its behaviour when end_ptr is null, so 'out char *' is wrong
@@ -5001,7 +5020,6 @@ namespace GLib {
 	}
 
 	[Compact]
-	[CCode (copy_func = "g_variant_iter_copy", free_func = "g_variant_iter_free")]
 	public class VariantIter {
 		public VariantIter (Variant value);
 		public size_t n_children ();
@@ -5027,7 +5045,7 @@ namespace GLib {
 		public bool lookup (string key, string format_string, ...);
 		public GLib.Variant lookup_value (string key, GLib.VariantType expected_type);
 		public bool contains (string key);
-		public void insert (string key, string fornat_string);
+		public void insert (string key, string format_string, ...);
 		public void insert_value (string key, GLib.Variant value);
 		public bool remove (string key);
 		public void clear ();
